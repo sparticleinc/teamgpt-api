@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi_pagination import Page
 from teamgpt.enums import Role
 from teamgpt.models import Organization, User, UserOrganization
-from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationOut, UserOut
+from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationOut, UserOut, UserOrganizationToOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
@@ -92,7 +92,7 @@ async def update_organization(
 @router.get(
     '/{org_id}/users',
     dependencies=[Depends(auth.implicit_scheme)],
-    # response_model=Page[UserOrganizationOut]
+    response_model=Page[UserOrganizationToOut]
 )
 async def get_users_in_organization(
         org_id: str,
@@ -109,8 +109,7 @@ async def get_users_in_organization(
         raise HTTPException(
             status_code=404, detail='User not found in this organization')
     queryset = UserOrganization.filter(organization=org_obj.id, deleted_at__isnull=True)
-    req_info = await tortoise_paginate(queryset, params, ['user'])
-    return req_info
+    return await tortoise_paginate(queryset, params, ['user'])
 
 
 # 邀请人加入Organization

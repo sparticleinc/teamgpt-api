@@ -1,3 +1,5 @@
+import uuid
+
 from tortoise.contrib.pydantic import pydantic_model_creator
 from teamgpt import models
 from pydantic import BaseModel
@@ -36,6 +38,15 @@ UserOrganizationOut = pydantic_model_creator(
     models.UserOrganization,
     name='UserOrganizationOut',
 )
+
+
+class UserOrganizationToOut(BaseModel):
+    id: uuid.UUID
+    role: str
+    user: UserOut
+
+    class Config:
+        orm_mode = True
 
 
 class GPTKeyIn(BaseModel):
