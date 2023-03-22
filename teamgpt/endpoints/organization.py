@@ -1,12 +1,13 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Security
-
+from fastapi_pagination import Page
 from teamgpt.enums import Role
 from teamgpt.models import Organization, User, UserOrganization
-from teamgpt.schemata import OrganizationOut, OrganizationIn
+from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationOut, UserOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
+from teamgpt.parameters import ListAPIParams, tortoise_paginate
 
 router = APIRouter(prefix='/organization', tags=['Organization'])
 
@@ -62,7 +63,7 @@ async def get_organization(
     org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
     if not org_obj:
         raise HTTPException(
-            status_code=404, detail='Organization not found')
+            status_code=404, detail='Organization id not found')
     return await OrganizationOut.from_tortoise_orm(org_obj)
 
 
@@ -80,7 +81,7 @@ async def update_organization(
     org_obj = await Organization.get_or_none(id=org_id)
     if not org_obj:
         raise HTTPException(
-            status_code=404, detail='Organization not found')
+            status_code=404, detail='Organization id not found')
     if org_obj.creator_id != user_info.id:
         raise HTTPException(
             status_code=403, detail='User not authorized to update this organization')
@@ -90,10 +91,12 @@ async def update_organization(
 
 @router.get(
     '/{org_id}/users',
-    dependencies=[Depends(auth.implicit_scheme)]
+    dependencies=[Depends(auth.implicit_scheme)],
+    # response_model=Page[UserOrganizationOut]
 )
 async def get_users_in_organization(
         org_id: str,
+        params: ListAPIParams = Depends(),
         user: Auth0User = Security(auth.get_user)
 ):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
@@ -105,8 +108,9 @@ async def get_users_in_organization(
     if not me_user_organization:
         raise HTTPException(
             status_code=404, detail='User not found in this organization')
-    info = await UserOrganization.filter(organization_id=org_obj.id).all()
-    return info
+    queryset = UserOrganization.filter(organization=org_obj.id, deleted_at__isnull=True)
+    req_info = await tortoise_paginate(queryset, params, ['user'])
+    return req_info
 
 
 # 邀请人加入Organization
@@ -131,5 +135,9 @@ async def invite_user_to_organization(
             status_code=403, detail='User not authorized to invite this organization')
     if not user_info:
         user_info = await User.create(email=email, user_id=uuid.uuid4())
+    user_org_info = await UserOrganization.get_or_none(user=user_info, organization_id=org_obj.id)
+    if user_org_info:
+        raise HTTPException(
+            status_code=400, detail='User already in this organization')
     await UserOrganization.create(user=user_info, organization_id=org_obj.id, role=Role.MEMBER)
     return await OrganizationOut.from_tortoise_orm(org_obj)

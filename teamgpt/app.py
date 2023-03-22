@@ -1,7 +1,3 @@
-import secrets
-import string
-from urllib.parse import urlparse
-
 import nest_asyncio
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +12,6 @@ nest_asyncio.apply()
 app = FastAPI()
 
 app.include_router(router)
-
 register_tortoise(
     app,
     config=TORTOISE_ORM,
@@ -53,5 +48,7 @@ async def oauth2_redirect():
 
 
 @app.get('/')
-def read_root(request: Request):
+def read_root():
     return 'hello'
+
+# logging.basicConfig(level=logging.DEBUG)

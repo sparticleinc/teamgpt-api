@@ -22,6 +22,21 @@ OrganizationIn = pydantic_model_creator(
     ),
 )
 
+UserOrganizationIn = pydantic_model_creator(
+    models.UserOrganization,
+    name='UserOrganizationIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+UserOrganizationOut = pydantic_model_creator(
+    models.UserOrganization,
+    name='UserOrganizationOut',
+)
+
 
 class GPTKeyIn(BaseModel):
     key: str
