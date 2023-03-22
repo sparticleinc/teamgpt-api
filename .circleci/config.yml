@@ -111,9 +111,9 @@ workflows:
       - deploy:
           name: prod-backend-deploy
           docker-tag: ""
-          path: "/home/ubuntu/coss-cluster-config/circleo/teamgpt-api/deploy.yaml"
+          path: "/home/ubuntu/coss-cluster-config/circleo-dev/teamgpt-api/deploy.yaml"
           deploy-name: teamgpt-api
-          deploy-namespace: metaoffice
+          deploy-namespace: metaoffice-dev
           context:
             - ecr-new
           filters:
