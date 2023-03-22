@@ -59,7 +59,7 @@ async def delete_organization(
 async def get_organization(
         org_id: str,
 ):
-    org_obj = await Organization.get_or_none(id=org_id)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization not found')
@@ -96,12 +96,16 @@ async def get_users_in_organization(
         org_id: str,
         user: Auth0User = Security(auth.get_user)
 ):
-    user_info = await User.get_or_none(user_id=user.id)
-    org_obj = await Organization.get_or_none(id=org_id)
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization not found')
-    info = await UserOrganization.filter(user_id=user_info.id, organization_id=org_obj.id).all()
+    me_user_organization = await UserOrganization.get_or_none(organization_id=org_obj.id, user_id=user_info.id)
+    if not me_user_organization:
+        raise HTTPException(
+            status_code=404, detail='User not found in this organization')
+    info = await UserOrganization.filter(organization_id=org_obj.id).all()
     return info
 
 
@@ -116,9 +120,9 @@ async def invite_user_to_organization(
         email: str,
         user: Auth0User = Security(auth.get_user)
 ):
-    create_user_info = await User.get_or_none(user_id=user.id)
-    user_info = await User.get_or_none(email=email)
-    org_obj = await Organization.get_or_none(id=org_id)
+    create_user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    user_info = await User.get_or_none(email=email, deleted_at__isnull=True)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization not found')

@@ -38,9 +38,10 @@ async def get_current_user(user: Auth0User = Security(auth.get_user)):
     auth_user = await get_user_info(user.id)
     user_obj = await User.get_or_none(email=auth_user['email'])
     if user_obj:
-        user_obj = await User.filter(id=user_obj.id).update(user_id=auth_user['id'], name=auth_user['name'],
-                                                            picture=auth_user['picture'],
-                                                            locale=auth_user['locale'], nickname=auth_user['nickname'])
-        return await UserOut.from_tortoise_orm(user_obj)
+        await User.filter(id=user_obj.id).update(user_id=user.id, name=auth_user['name'],
+                                                 picture=auth_user['picture'],
+                                                 nickname=auth_user['nickname'])
+        new_user_obj = await User.get_or_none(email=auth_user['email'])
+        return await UserOut.from_tortoise_orm(new_user_obj)
     user_obj = await User.create(**auth_user)
     return await UserOut.from_tortoise_orm(user_obj)
