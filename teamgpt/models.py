@@ -2,6 +2,8 @@ from datetime import datetime
 
 from tortoise import fields, models
 
+from teamgpt.enums import Role
+
 
 class AbstractBaseModel(models.Model):
     id = fields.UUIDField(pk=True)
@@ -52,16 +54,16 @@ class Organization(AbstractBaseModelWithDeletedAt):
 
     class PydanticMeta:
         exclude = (
-            'created_at',
             'updated_at',
             'deleted_at',
-            'id'
         )
 
 
 class UserOrganization(AbstractBaseModelWithDeletedAt):
     user = fields.ForeignKeyField('models.User', related_name='user_organizations')
     organization = fields.ForeignKeyField('models.Organization', related_name='user_organizations')
+    # 角色
+    role = fields.CharEnumField(Role, max_length=100, null=True)
 
     class PydanticMeta:
         exclude = (

@@ -14,4 +14,9 @@ OrganizationOut = pydantic_model_creator(
 OrganizationIn = pydantic_model_creator(
     models.Organization,
     name='OrganizationIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
 )
