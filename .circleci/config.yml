@@ -6,7 +6,7 @@ orbs:
 jobs:
   install:
     docker:
-      - image: cimg/python:3.10.9
+      - image: cimg/python:3.11.2
     resource_class: medium
     steps:
       - checkout # checkout source code
@@ -22,7 +22,7 @@ jobs:
             - .
   build-and-push:
     machine:
-      image: ubuntu-2004:202010-01
+      image: ubuntu-2004:current
     resource_class: medium
     parameters:
       docker-tag:
@@ -51,7 +51,7 @@ jobs:
           
   deploy:
     machine:
-       image: ubuntu-2004:202111-02
+       image: ubuntu-2004:current
     resource_class: medium
     parameters:
       docker-tag:
@@ -96,7 +96,7 @@ workflows:
             - ecr-new
           path: .
           dockerfile: Dockerfile
-          repo: excel-add-in-ai-backend
+          repo: teamgpt-api
           docker-tag: ""
           filters:
             branches:
@@ -112,7 +112,7 @@ workflows:
           name: prod-backend-deploy
           docker-tag: ""
           path: "/home/ubuntu/coss-cluster-config/circleo/excel-ai/deploy.yaml"
-          deploy-name: excel-ai
+          deploy-name: teamgpt-api
           deploy-namespace: metaoffice
           context:
             - ecr-new
