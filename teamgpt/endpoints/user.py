@@ -11,7 +11,7 @@ from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
                               AUTHORIZATION_URL, LOGOUT_URL, auth)
 from teamgpt.util.auth0 import get_user_info
 
-router = APIRouter(prefix='', tags=['users'])
+router = APIRouter(prefix='', tags=['Users'])
 
 
 @router.get('/login')
@@ -35,9 +35,12 @@ def do_logout():
     dependencies=[Depends(auth.implicit_scheme)]
 )
 async def get_current_user(user: Auth0User = Security(auth.get_user)):
-    user_obj = await User.get_or_none(user_id=user.id)
+    auth_user = await get_user_info(user.id)
+    user_obj = await User.get_or_none(email=auth_user['email'])
     if user_obj:
+        user_obj = await User.filter(id=user_obj.id).update(user_id=auth_user['id'], name=auth_user['name'],
+                                                            picture=auth_user['picture'],
+                                                            locale=auth_user['locale'], nickname=auth_user['nickname'])
         return await UserOut.from_tortoise_orm(user_obj)
-    user = await get_user_info(user.id)
-    user_obj = await User.create(**user)
+    user_obj = await User.create(**auth_user)
     return await UserOut.from_tortoise_orm(user_obj)

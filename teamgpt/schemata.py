@@ -1,5 +1,6 @@
 from tortoise.contrib.pydantic import pydantic_model_creator
 from teamgpt import models
+from pydantic import BaseModel
 
 UserOut = pydantic_model_creator(
     models.User,
@@ -19,4 +20,15 @@ OrganizationIn = pydantic_model_creator(
         'created_at',
         'updated_at',
     ),
+)
+
+
+class GPTKeyIn(BaseModel):
+    key: str
+    organization_id: str
+
+
+GPTKeyOut = pydantic_model_creator(
+    models.GPTKey,
+    name='GptKeyOut',
 )

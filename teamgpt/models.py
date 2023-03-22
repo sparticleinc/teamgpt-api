@@ -45,9 +45,16 @@ class User(AbstractBaseModelWithDeletedAt):
 
 
 class Organization(AbstractBaseModelWithDeletedAt):
+    def __init__(self, **kwargs):
+        super().__init__(kwargs)
+        self.creator_id = None
+
     name = fields.CharField(max_length=100, unique=True)
     picture = fields.CharField(max_length=255, null=True)
     users = fields.ManyToManyField('models.User', related_name='organizations')
+
+    gpt_keys: fields.ReverseRelation['GPTKey']
+
     creator: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         'models.User', related_name='created_organizations'
     )
@@ -80,8 +87,6 @@ class GPTKey(AbstractBaseModelWithDeletedAt):
 
     class PydanticMeta:
         exclude = (
-            'created_at',
             'updated_at',
             'deleted_at',
-            'id'
         )
