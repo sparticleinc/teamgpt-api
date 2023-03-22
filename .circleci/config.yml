@@ -6,7 +6,7 @@ orbs:
 jobs:
   install:
     docker:
-      - image: cimg/python:3.11.2
+      - image: cimg/python:3.10.10
     resource_class: medium
     steps:
       - checkout # checkout source code
