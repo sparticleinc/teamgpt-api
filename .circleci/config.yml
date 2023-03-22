@@ -1,0 +1,125 @@
+version: 2.1
+orbs:
+  aws-ecr: circleci/aws-ecr@7.0.0
+  discord: antonioned/discord@0.1.0
+
+jobs:
+  install:
+    docker:
+      - image: cimg/python:3.10.9
+    resource_class: medium
+    steps:
+      - checkout # checkout source code
+      - run: python --version
+      - run:
+          pip install -r requirements.txt
+      # - run:
+      #     name: Run tests
+      #     command: python -m pytest
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+  build-and-push:
+    machine:
+      image: ubuntu-2004:202010-01
+    resource_class: medium
+    parameters:
+      docker-tag:
+        type: string
+      path:
+        type: string
+      repo:
+        type: string
+      dockerfile:
+        type: string
+    working_directory: ~/project
+    steps:
+      # - attach_workspace:
+      #     at: ~/project
+      - aws-ecr/build-and-push-image:
+          checkout: true
+          account-url: AWS_ECR_ACCOUNT_URL
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+          create-repo: false
+          dockerfile: <<parameters.dockerfile>>
+          path: <<parameters.path>>
+          region: AWS_REGION
+          repo: <<parameters.repo>>
+          tag: "<<parameters.docker-tag>>${CIRCLE_SHA1}"
+          
+  deploy:
+    machine:
+       image: ubuntu-2004:202111-02
+    resource_class: medium
+    parameters:
+      docker-tag:
+        type: string
+      path:
+        type: string
+      deploy-name:
+        type: string
+      deploy-namespace:
+        type: string
+    steps:
+      # - add_ssh_keys:
+      - run: 
+          name: kubectl apply
+          command: |
+            CMD='/home/ubuntu/coss-cluster-config/deploy.sh <<parameters.path>> <<parameters.docker-tag>>'${CIRCLE_SHA1}' <<parameters.deploy-name>> <<parameters.deploy-namespace>>'
+            echo $CMD
+            ssh ${USER_NAME}@${HOST_NAME} ${CMD}
+      - discord/status:
+          fail_only: false
+          failure_message: "**${CIRCLE_USERNAME}**'s deployed branch:${CIRCLE_BRANCH} job: **${CIRCLE_JOB}** failed."
+          webhook: "https://discord.com/api/webhooks/1058302135776854046/1mr99g9nroh0mN50d6t2y9uJnGO8xkfZj84Uc8Ie2WvUFYnwwE_NhULvuTdt0PYDy_am"
+          success_message: "**${CIRCLE_USERNAME}** deployed branch:${CIRCLE_BRANCH} success."
+
+workflows:
+  version: 2
+  backend_build_and_push:
+    jobs:
+      # 正式环境执行docker打包，并将包推送至aws ecr镜像仓库中，仅对release分支触发，示例：2021.wk.34     
+      # - install:
+      #     name: backend-install
+      #     context:
+      #       - ecr-new
+      #     filters:
+      #       branches:
+      #         only: 
+      #         - main
+      #         - circleo-ci
+      - build-and-push:
+          name: backend-build
+          context:
+            - ecr-new
+          path: .
+          dockerfile: Dockerfile
+          repo: excel-add-in-ai-backend
+          docker-tag: ""
+          filters:
+            branches:
+              only: 
+              - main
+              - circleo-ci
+              - pre
+              - /^[0-9]*.wk[0-9]*$/
+          # requires:
+          #   - backend-install
+          
+      - deploy:
+          name: prod-backend-deploy
+          docker-tag: ""
+          path: "/home/ubuntu/coss-cluster-config/circleo/excel-ai/deploy.yaml"
+          deploy-name: excel-ai
+          deploy-namespace: metaoffice
+          context:
+            - ecr-new
+          filters:
+            branches:
+              only:
+                - main
+                - /^[0-9]*.wk[0-9]*$/
+          requires:
+            - backend-build
