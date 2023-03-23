@@ -53,7 +53,8 @@ DB_URL = 'postgres://{username}:{pwd}@{host}:{port}/{dbname}'.format(
 # AUTH0_ADMIN_API_AUDIENCE = os.getenv(
 #     'AUTH0_ADMIN_API_AUDIENCE', 'https://dev-1x5li4ewlxn3t8ed.jp.auth0.com/api/v2/')
 
-AUTH0_DOMAIN = 'dev-1x5li4ewlxn3t8ed.jp.auth0.com'
+AUTH0_DOMAIN = os.getenv(
+    'AUTH0_DOMAIN', '')
 AUTH0_API_AUDIENCE = os.getenv('AUTH0_API_AUDIENCE', 'https://teamgpt.felo.me')
 AUTH0_CLIENT_ID = os.getenv(
     'AUTH0_CLIENT_ID', 'XGEBP8CV9tOy1BW3o0XVBPoilLm0QkHp')
