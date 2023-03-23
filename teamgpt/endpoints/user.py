@@ -15,10 +15,13 @@ router = APIRouter(prefix='', tags=['Users'])
 
 
 @router.get('/login')
-def do_login(state: Optional[str] = None):
+def do_login(state: Optional[str] = None, url: Optional[str] = None):
     response_type_qs = urlencode({'response_type': 'token'})
     client_id_qs = urlencode({'client_id': AUTH0_CLIENT_ID})
-    redirect_uri_qs = urlencode({'redirect_uri': AUTH0_REDIRECT_URI})
+    if url is None:
+        redirect_uri_qs = urlencode({'redirect_uri': AUTH0_REDIRECT_URI})
+    else:
+        redirect_uri_qs = urlencode({'redirect_uri': url})
     state_qs = urlencode({'state': state})
     auth_url = f'{AUTHORIZATION_URL}&{response_type_qs}&{client_id_qs}&{redirect_uri_qs}&{state_qs}'
     return RedirectResponse(url=auth_url, status_code=302)

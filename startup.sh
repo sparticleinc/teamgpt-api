@@ -2,4 +2,4 @@
 
 #!/bin/sh
 aerich upgrade
-uvicorn teamgpt.app:app --host 127.0.0.1 --no-access-log --port 8000 --workers 2 --reload
+uvicorn teamgpt.app:app --root-path --host 0.0.0.0 --port 8000 --no-access-log
