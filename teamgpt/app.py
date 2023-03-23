@@ -50,5 +50,3 @@ async def oauth2_redirect():
 @app.get('/')
 def read_root():
     return 'hello'
-
-# logging.basicConfig(level=logging.DEBUG)
