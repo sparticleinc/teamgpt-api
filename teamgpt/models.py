@@ -51,7 +51,7 @@ class Organization(AbstractBaseModelWithDeletedAt):
     users = fields.ManyToManyField('models.User', related_name='organizations')
 
     gpt_keys: fields.ReverseRelation['GPTKey']
-    user_organizations: fields.ReverseRelation['UserOrganization']
+    user_user_organizations: fields.ReverseRelation['UserOrganization']
 
     creator: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         'models.User', related_name='created_organizations'
@@ -68,7 +68,7 @@ class UserOrganization(AbstractBaseModelWithDeletedAt):
     user = fields.ForeignKeyField(
         'models.User', related_name='user_organizations')
     organization = fields.ForeignKeyField(
-        'models.Organization', related_name='user_organizations')
+        'models.Organization', related_name='user_user_organizations')
     # 角色
     role = fields.CharEnumField(Role, max_length=100, null=True)
 

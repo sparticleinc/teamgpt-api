@@ -44,6 +44,7 @@ class UserOrganizationToOut(BaseModel):
     id: uuid.UUID
     role: str
     user: UserOut
+    organization: OrganizationOut
 
     class Config:
         orm_mode = True

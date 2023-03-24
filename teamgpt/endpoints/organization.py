@@ -108,8 +108,9 @@ async def get_users_in_organization(
     if not me_user_organization:
         raise HTTPException(
             status_code=404, detail='User not found in this organization')
-    queryset = UserOrganization.filter(organization=org_obj.id, deleted_at__isnull=True)
-    return await tortoise_paginate(queryset, params, ['user'])
+    queryset = UserOrganization.filter(
+        organization=org_obj.id, deleted_at__isnull=True)
+    return await tortoise_paginate(queryset, params, ['organization', 'user'])
 
 
 # 邀请人加入Organization
@@ -140,3 +141,19 @@ async def invite_user_to_organization(
             status_code=400, detail='User already in this organization')
     await UserOrganization.create(user=user_info, organization_id=org_obj.id, role=Role.MEMBER)
     return await OrganizationOut.from_tortoise_orm(org_obj)
+
+
+# 查询自己在哪些Organization
+@router.get(
+    '/me/info',
+    dependencies=[Depends(auth.implicit_scheme)],
+    response_model=Page[UserOrganizationToOut]
+)
+async def get_my_organizations(
+        params: ListAPIParams = Depends(),
+        user: Auth0User = Security(auth.get_user)
+):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    queryset = UserOrganization.filter(
+        user=user_info.id, deleted_at__isnull=True)
+    return await tortoise_paginate(queryset, params, ['organization', 'user'])
