@@ -27,13 +27,13 @@ def do_login(state: Optional[str] = None, url: Optional[str] = None):
     return RedirectResponse(url=auth_url, status_code=302)
 
 
-@router.get('/api/v1/logout')
+@router.get('/logout')
 def do_logout():
     return RedirectResponse(url=LOGOUT_URL, status_code=302)
 
 
 @router.get(
-    '/api/v1//users/me',
+    '/users/me',
     response_model=UserOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )

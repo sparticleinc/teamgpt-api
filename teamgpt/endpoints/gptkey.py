@@ -12,7 +12,7 @@ from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
                               AUTHORIZATION_URL, LOGOUT_URL, auth)
 from teamgpt.util.auth0 import get_user_info
 
-router = APIRouter(prefix='/api/v1/gpt_key', tags=['GptKey'])
+router = APIRouter(prefix='/gpt_key', tags=['GptKey'])
 
 
 @router.post(
