@@ -2,68 +2,73 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi_pagination import Page
+from starlette.status import HTTP_204_NO_CONTENT
+
 from teamgpt.enums import Role
-from teamgpt.models import Organization, User, UserOrganization
-from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationOut, UserOut, UserOrganizationToOut
+from teamgpt.models import Organization, User, UserOrganization, Conversations
+from teamgpt.schemata import ConversationsIn, ConversationsOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 
 router = APIRouter(prefix='/conversations', tags=['Conversations'])
 
-#
-# # 创建conversations
-# @router.post('/', response_model=OrganizationOut)
-# async def create_conversations(
-#         organization: OrganizationIn,
-#         current_user: Auth0User = Security(auth.get_current_user, scopes=['create:conversations'])
-# ):
-#     # 判断是否有创建组织的权限
-#     if current_user.role != Role.ADMIN:
-#         raise HTTPException(status_code=403, detail='Permission denied')
-#     # 创建组织
-#     organization = await Organization.create(**organization.dict())
-#     return organization
-#
-#
-# # 获取conversations
-# @router.get('/', response_model=Page[OrganizationOut])
-# async def get_conversations(
-#         params: ListAPIParams = Depends(),
-#         current_user: Auth0User = Security(auth.get_current_user, scopes=['read:conversations'])
-# ):
-#     # 判断是否有获取组织的权限
-#     if current_user.role != Role.ADMIN:
-#         raise HTTPException(status_code=403, detail='Permission denied')
-#     # 获取组织
-#     return await tortoise_paginate(params, Organization.all())
-#
-#
-# # 删除conversations
-# @router.delete('/{organization_id}', response_model=OrganizationOut)
-# async def delete_conversations(
-#         organization_id: uuid.UUID,
-#         current_user: Auth0User = Security(auth.get_current_user, scopes=['delete:conversations'])
-# ):
-#     # 判断是否有删除组织的权限
-#     if current_user.role != Role.ADMIN:
-#         raise HTTPException(status_code=403, detail='Permission denied')
-#     # 删除组织
-#     organization = await Organization.get(id=organization_id)
-#     await organization.soft_delete()
-#     return organization
-#
-#
-# # 修改conversations
-# @router.put('/{organization_id}', response_model=OrganizationOut)
-# async def update_conversations(
-#         organization_id: uuid.UUID,
-#         organization: OrganizationIn,
-#         current_user: Auth0User = Security(auth.get_current_user, scopes=['update:conversations'])
-# ):
-#     # 判断是否有修改组织的权限
-#     if current_user.role != Role.ADMIN:
-#         raise HTTPException(status_code=403, detail='Permission denied')
-#     # 修改组织
-#     organization = await Organization.filter(id=organization_id).update(**organization.dict(exclude_unset=True))
-#     return organization
+
+# create conversations
+@router.post('/{organization_id}', response_model=ConversationsOut, dependencies=[Depends(auth.implicit_scheme)])
+async def create_conversations(
+        conversations_input: ConversationsIn,
+        organization_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    new_obj = await Conversations.create(user=user_info, title=conversations_input.title,
+                                         organization_id=organization_id)
+    return await ConversationsOut.from_tortoise_orm(new_obj)
+
+
+# del conversations
+@router.delete('/{organization_id}/{conversations_id}', status_code=HTTP_204_NO_CONTENT,
+               dependencies=[Depends(auth.implicit_scheme)])
+async def del_conversations(
+        organization_id: str,
+        conversations_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    con_obj = await Conversations.get_or_none(id=conversations_id, organization_id=organization_id, user=user_info,
+                                              deleted_at__isnull=True)
+    if con_obj is None:
+        raise HTTPException(status_code=404, detail='Conversation not found')
+    await con_obj.soft_delete()
+
+
+# edit conversations
+@router.put('/{organization_id}/{conversations_id}', response_model=ConversationsOut,
+            dependencies=[Depends(auth.implicit_scheme)])
+async def edit_conversations(
+        conversations_input: ConversationsIn,
+        organization_id: str,
+        conversations_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    con_obj = await Conversations.get_or_none(id=conversations_id, organization_id=organization_id, user=user_info,
+                                              deleted_at__isnull=True)
+    if con_obj is None:
+        raise HTTPException(status_code=404, detail='Conversation not found')
+    con_obj.title = conversations_input.title
+    await con_obj.save()
+    return await ConversationsOut.from_tortoise_orm(con_obj)
+
+
+# get conversations
+@router.get('/{organization_id}', response_model=Page[ConversationsOut], dependencies=[Depends(auth.implicit_scheme)])
+async def get_conversations(
+        organization_id: str,
+        user: Auth0User = Security(auth.get_user),
+        params: ListAPIParams = Depends()
+):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    con_org = Conversations.filter(user=user_info, organization_id=organization_id, deleted_at__isnull=True)
+    return await tortoise_paginate(con_org, params)

@@ -59,3 +59,33 @@ GPTKeyOut = pydantic_model_creator(
     models.GPTKey,
     name='GptKeyOut',
 )
+
+ConversationsIn = pydantic_model_creator(
+    models.Conversations,
+    name='ConversationsIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+ConversationsOut = pydantic_model_creator(
+    models.Conversations,
+    name='ConversationsOut',
+)
+
+ConversationsMessageIn = pydantic_model_creator(
+    models.ConversationsMessage,
+    name='ConversationsMessageIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+ConversationsMessageOut = pydantic_model_creator(
+    models.ConversationsMessage,
+    name='ConversationsMessageOut',
+)
