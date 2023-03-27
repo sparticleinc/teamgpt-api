@@ -3,7 +3,7 @@ from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role, ContentType, AutherUser
+from teamgpt.enums import Role, ContentType, AutherUser, GptModel
 
 
 class AbstractBaseModel(models.Model):
@@ -100,6 +100,7 @@ class Conversations(AbstractBaseModelWithDeletedAt):
         'models.Organization', related_name='organization_conversations')
     user = fields.ForeignKeyField(
         'models.User', related_name='user_conversations')
+    model = fields.CharEnumField(GptModel, max_length=100, null=True)
 
     class PydanticMeta:
         exclude = (
