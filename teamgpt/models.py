@@ -115,7 +115,6 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
         'models.Conversations', related_name='conversation_messages')
     user = fields.ForeignKeyField(
         'models.User', related_name='user_messages')
-    children = uuid.uuid4()
     content_type = fields.CharEnumField(ContentType, max_length=100, null=True)
     author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
 
