@@ -1,8 +1,9 @@
+import uuid
 from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role
+from teamgpt.enums import Role, ContentType, AutherUser
 
 
 class AbstractBaseModel(models.Model):
@@ -35,6 +36,7 @@ class User(AbstractBaseModelWithDeletedAt):
 
     created_organizations: fields.ReverseRelation['Organization']
     user_organizations: fields.ReverseRelation['UserOrganization']
+    user_conversations: fields.ReverseRelation['Conversations']
 
     class PydanticMeta:
         exclude = (
@@ -52,6 +54,7 @@ class Organization(AbstractBaseModelWithDeletedAt):
 
     gpt_keys: fields.ReverseRelation['GPTKey']
     user_user_organizations: fields.ReverseRelation['UserOrganization']
+    organization_conversations: fields.ReverseRelation['Conversations']
 
     creator: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         'models.User', related_name='created_organizations'
@@ -83,6 +86,37 @@ class GPTKey(AbstractBaseModelWithDeletedAt):
     key = fields.CharField(max_length=255)
     organization = fields.ForeignKeyField(
         'models.Organization', related_name='gpt_keys')
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class Conversations(AbstractBaseModelWithDeletedAt):
+    title = fields.CharField(max_length=255)
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_conversations')
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_conversations')
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class ConversationsMessage(AbstractBaseModelWithDeletedAt):
+    message = fields.TextField(null=True)
+    conversation = fields.ForeignKeyField(
+        'models.Conversations', related_name='conversation_messages')
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_messages')
+    children = uuid.uuid4()
+    content_type = fields.CharEnumField(ContentType, max_length=100, null=True)
+    author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
 
     class PydanticMeta:
         exclude = (

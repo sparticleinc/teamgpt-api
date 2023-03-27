@@ -9,7 +9,7 @@ from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 
-router = APIRouter(prefix='/organization', tags=['Organization'])
+router = APIRouter(prefix='/api/v1/organization', tags=['Organization'])
 
 
 @router.post(
