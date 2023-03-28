@@ -77,6 +77,10 @@ AUTHORIZATION_URL_QS = urlencode({'audience': AUTH0_API_AUDIENCE})
 AUTHORIZATION_URL = f'https://{AUTH0_DOMAIN}/authorize?{AUTHORIZATION_URL_QS}'
 LOGOUT_URL = f'https://{AUTH0_DOMAIN}/v2/logout?client_id={AUTH0_CLIENT_ID}&returnTo={AUTH0_LOGOUT_REDIRECT_URI}'
 
+# gpt-key
+GPT_KEY = os.getenv(
+    'GPT_KEY', '')
+
 # TortoiseORM settings
 TORTOISE_ORM = {
     'connections': {

@@ -1,11 +1,13 @@
 import openai
 
+from teamgpt.settings import (GPT_KEY)
+
 
 async def get_events():
-    openai.api_key = "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"
+    openai.api_key = GPT_KEY
     message_log = [
         {"content": "Hello, I am a chat robot.", "role": "system"},
-        {"content": "宁波有几条地铁", "role": "user"}
+        {"content": "you name", "role": "user"}
     ]
 
     response = openai.ChatCompletion.create(
