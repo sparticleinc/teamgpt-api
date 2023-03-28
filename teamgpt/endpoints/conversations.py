@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Security, Query
+import asyncio
+
+from fastapi import APIRouter, Depends, HTTPException, Security, Query, Request
 from fastapi_pagination import Page
+from sse_starlette import EventSourceResponse
 from starlette.status import HTTP_204_NO_CONTENT
 from typing import Union
 
@@ -9,8 +12,19 @@ from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMes
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
+from teamgpt.util.gpt import get_events
 
 router = APIRouter(prefix='/conversations', tags=['Conversations'])
+
+
+@router.get('/sse-demo')
+async def sse_conversations_message(
+):
+    async def event_generator():
+        async for event in get_events():
+            yield event
+
+    return EventSourceResponse(event_generator())
 
 
 # create conversations
