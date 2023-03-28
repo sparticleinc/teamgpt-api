@@ -11,7 +11,7 @@ async def get_events():
     ]
 
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # 使用 gpt-3.5-turbo 模型
+        model="gpt-3.5-turbo",
         messages=message_log,
         stream=True
     )
@@ -23,4 +23,22 @@ async def get_events():
         yield {
             "event": "text",
             "data": {'message': message, 'sta': chunk['choices'][0]['finish_reason']},
+        }
+
+
+async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
+    openai.api_key = api_key
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=message_log,
+        stream=True
+    )
+    for chunk_msg in response:
+        if 'content' in chunk_msg['choices'][0]['delta']:
+            message = chunk_msg['choices'][0]['delta']['content']
+        else:
+            message = ''
+        yield {
+            "event": "text",
+            "data": {'message': message, 'sta': chunk_msg['choices'][0]['finish_reason'], 'id': conversations_id},
         }
