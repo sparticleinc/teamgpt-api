@@ -2,7 +2,7 @@ import openai
 
 
 async def get_events():
-    openai.api_key = "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"
+    openai.api_key = "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"
     message_log = [
         {"content": "Hello, I am a chat robot.", "role": "system"},
         {"content": "宁波有几条地铁", "role": "user"}
