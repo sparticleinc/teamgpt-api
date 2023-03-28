@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Security, Query, Request
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, Security, Query
 from fastapi_pagination import Page
 from sse_starlette import EventSourceResponse
 from starlette.status import HTTP_204_NO_CONTENT
@@ -6,7 +8,7 @@ from typing import Union
 
 from teamgpt.enums import GptModel, ContentType, AutherUser
 from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey
-from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
+from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
@@ -136,6 +138,8 @@ async def create_conversations_message(
         raise HTTPException(status_code=404, detail='GPT key not found')
 
     # 发送sse请求数据
+    start_time = int(time.time())
+
     async def send_gpt():
         message = ''
         agen = ask(gpt_key.key, message_log[::-1], model, conversations_id)
@@ -144,10 +148,12 @@ async def create_conversations_message(
                 message = message + event['data']['message']
                 yield event
             else:
+                end_time = int(time.time())
                 await ConversationsMessage.create(user=user_info, conversation_id=conversations_id,
                                                   message=message,
                                                   author_user=AutherUser.ASSISTANT,
-                                                  content_type=ContentType.TEXT
+                                                  content_type=ContentType.TEXT,
+                                                  run_time=end_time - start_time
                                                   )
                 yield event
                 await agen.aclose()

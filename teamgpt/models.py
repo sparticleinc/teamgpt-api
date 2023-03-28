@@ -117,6 +117,7 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
         'models.User', related_name='user_messages')
     content_type = fields.CharEnumField(ContentType, max_length=100, null=True)
     author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
+    run_time = fields.IntField(null=True)
 
     class PydanticMeta:
         exclude = (
