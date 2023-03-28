@@ -21,8 +21,12 @@ router = APIRouter(prefix='/conversations', tags=['Conversations'])
 async def sse_conversations_message(
 ):
     async def event_generator():
-        async for event in get_events():
-            yield event
+        agen = get_events()
+        async for event in agen:
+            if event['data']['sta'] is None:
+                yield event
+            else:
+                await agen.aclose()
 
     return EventSourceResponse(event_generator())
 

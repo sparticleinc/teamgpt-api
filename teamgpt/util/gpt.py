@@ -2,7 +2,7 @@ import openai
 
 
 async def get_events():
-    openai.api_key = "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"
+    openai.api_key = "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"
     message_log = [
         {"content": "Hello, I am a chat robot.", "role": "system"},
         {"content": "宁波有几条地铁", "role": "user"}
@@ -15,10 +15,10 @@ async def get_events():
     )
     for chunk in response:
         if 'content' in chunk['choices'][0]['delta']:
-            data = chunk['choices'][0]['delta']['content']
+            message = chunk['choices'][0]['delta']['content']
         else:
-            data = ''
+            message = ''
         yield {
             "event": "text",
-            "data": data,
+            "data": {'message': message, 'sta': chunk['choices'][0]['finish_reason']},
         }
