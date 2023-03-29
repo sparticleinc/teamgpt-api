@@ -20,9 +20,11 @@ async def get_events():
             message = chunk['choices'][0]['delta']['content']
         else:
             message = ''
+        sta = 'run'
+        if chunk['choices'][0]['finish_reason'] == 'stop':
+            sta = 'stop'
         yield {
-            "event": "text",
-            "data": {'message': message, 'sta': chunk['choices'][0]['finish_reason']},
+            "data": {'message': message, 'sta': sta},
         }
 
 
@@ -38,7 +40,9 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
             message = chunk_msg['choices'][0]['delta']['content']
         else:
             message = ''
+        sta = 'run'
+        if chunk_msg['choices'][0]['finish_reason'] == 'stop':
+            sta = 'stop'
         yield {
-            "event": "text",
-            "data": {'message': message, 'sta': chunk_msg['choices'][0]['finish_reason'], 'id': conversations_id},
+            "data": {'message': message, 'sta': sta, 'id': conversations_id},
         }

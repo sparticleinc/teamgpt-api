@@ -24,11 +24,11 @@ async def sse_conversations_message(
         message = ''
         agen = get_events()
         async for event in agen:
-            if event['data']['sta'] is None:
+            if event['data']['sta'] == 'run':
                 message = message + event['data']['message']
                 yield event
             else:
-                print(message, 'ss')
+                yield event
                 await agen.aclose()
 
     return EventSourceResponse(event_generator())
@@ -145,7 +145,7 @@ async def create_conversations_message(
         message = ''
         agen = ask(gpt_key.key, message_log[::-1], model, conversations_id)
         async for event in agen:
-            if event['data']['sta'] is None:
+            if event['data']['sta'] == 'run':
                 message = message + event['data']['message']
                 yield event
             else:
