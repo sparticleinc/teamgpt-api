@@ -1,11 +1,12 @@
 from typing import Optional
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, Security, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_auth0 import Auth0User
+from starlette.status import HTTP_204_NO_CONTENT
 
-from teamgpt.models import User
+from teamgpt.models import User, UserOrganization
 from teamgpt.schemata import UserOut
 from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
                               AUTHORIZATION_URL, LOGOUT_URL, auth)
@@ -49,4 +50,21 @@ async def get_current_user(user: Auth0User = Security(auth.get_user)):
     user_obj = await User.create(**auth_user)
     return await UserOut.from_tortoise_orm(user_obj)
 
+
 # 用户绑定当前所在组织
+@router.post(
+    '/bind/{organization_id}',
+    dependencies=[Depends(auth.implicit_scheme)], status_code=HTTP_204_NO_CONTENT,
+)
+async def bind_user_organization(
+        organization_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    user_obj = await User.get_or_none(user_id=user.id)
+    if user_obj is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    # 查询用户是否在这个组织中
+    user_org = await UserOrganization.get_or_none(user_id=user_obj.id, organization_id=organization_id)
+    if user_org is None:
+        raise HTTPException(status_code=404, detail="User not found in this organization")
+    await User.filter(id=user_obj.id).update(current_organization=organization_id)

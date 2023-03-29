@@ -33,7 +33,8 @@ class User(AbstractBaseModelWithDeletedAt):
     picture = fields.CharField(max_length=255, null=True)
     locale = fields.CharField(max_length=50, null=True)
     nickname = fields.CharField(max_length=100, null=True)
-
+    current_organization = fields.CharField(max_length=100, null=True)
+    
     created_organizations: fields.ReverseRelation['Organization']
     user_organizations: fields.ReverseRelation['UserOrganization']
     user_conversations: fields.ReverseRelation['Conversations']
