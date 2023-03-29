@@ -103,6 +103,7 @@ async def create_conversations_message(
         conversations_id: Union[str, None] = None,
         title: Union[str, None] = None,
         model: Union[GptModel, None] = Query(default=GptModel.GPT3TURBO),
+        context_number: Union[int, None] = Query(default=10),
         user: Auth0User = Security(auth.get_user)
 ):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
@@ -129,7 +130,7 @@ async def create_conversations_message(
                                           )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversations_id,
-                                                deleted_at__isnull=True).order_by('-created_at').limit(10)
+                                                deleted_at__isnull=True).order_by('-created_at').limit(context_number)
     for con in con_org:
         message_log.append({'role': con.author_user, 'content': con.message})
     # 查询gpt-key配置信息
