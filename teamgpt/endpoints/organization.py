@@ -24,10 +24,11 @@ async def create_organization(
     user_info = await User.get_or_none(user_id=user.id)
     new_org_obj, created = await Organization.get_or_create(name=org_input.name, defaults={'picture': org_input.picture,
                                                                                            'creator': user_info})
-    await UserOrganization.create(user=user_info, organization_id=new_org_obj.id, role=Role.CREATOR)
     if not created:
         raise HTTPException(
             status_code=400, detail='Organization name already exists')
+    await UserOrganization.create(user=user_info, organization_id=new_org_obj.id, role=Role.CREATOR)
+
     return await OrganizationOut.from_tortoise_orm(new_org_obj)
 
 
