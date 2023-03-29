@@ -48,3 +48,5 @@ async def get_current_user(user: Auth0User = Security(auth.get_user)):
         return await UserOut.from_tortoise_orm(new_user_obj)
     user_obj = await User.create(**auth_user)
     return await UserOut.from_tortoise_orm(user_obj)
+
+# 用户绑定当前所在组织
