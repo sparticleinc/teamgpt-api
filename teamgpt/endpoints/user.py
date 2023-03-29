@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from fastapi_auth0 import Auth0User
 from starlette.status import HTTP_204_NO_CONTENT
 
-from teamgpt.models import User, UserOrganization
+from teamgpt.models import User, UserOrganization, Organization
 from teamgpt.schemata import UserOut
 from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
                               AUTHORIZATION_URL, LOGOUT_URL, auth)
@@ -63,6 +63,9 @@ async def bind_user_organization(
     user_obj = await User.get_or_none(user_id=user.id)
     if user_obj is None:
         raise HTTPException(status_code=404, detail="User not found")
+    org_obj = await Organization.get_or_none(id=organization_id)
+    if org_obj is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
     # 查询用户是否在这个组织中
     user_org = await UserOrganization.get_or_none(user_id=user_obj.id, organization_id=organization_id)
     if user_org is None:

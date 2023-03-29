@@ -1,16 +1,11 @@
 import uuid
-from typing import Optional
-from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Security, HTTPException
-from fastapi.responses import RedirectResponse
 from fastapi_auth0 import Auth0User
 
 from teamgpt.models import GPTKey, User, Organization
-from teamgpt.schemata import GPTKeyOut, GPTKeyIn, OrganizationOut
-from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
-                              AUTHORIZATION_URL, LOGOUT_URL, auth)
-from teamgpt.util.auth0 import get_user_info
+from teamgpt.schemata import GPTKeyOut, GPTKeyIn
+from teamgpt.settings import (auth)
 
 router = APIRouter(prefix='/gpt_key', tags=['GptKey'])
 
