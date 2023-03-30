@@ -82,6 +82,7 @@ ConversationsMessageIn = pydantic_model_creator(
         'id',
         'created_at',
         'updated_at',
+        'run_time'
     ),
 )
 
