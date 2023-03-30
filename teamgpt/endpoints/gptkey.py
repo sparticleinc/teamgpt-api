@@ -29,6 +29,7 @@ async def bind_gpt(
         await GPTKey.filter(id=gpt_obj.id).update(key=gpt_input.key)
     else:
         gpt_obj = await GPTKey.create(key=gpt_input.key, organization_id=uuid.UUID(gpt_input.organization_id))
+    gpt_obj.key = gpt_input.key
     return await GPTKeyOut.from_tortoise_orm(gpt_obj)
 
 

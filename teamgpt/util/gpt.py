@@ -1,4 +1,7 @@
+import json
+
 import openai
+from fastapi import HTTPException
 
 from teamgpt.settings import (GPT_KEY)
 
@@ -24,25 +27,30 @@ async def get_events():
         if chunk['choices'][0]['finish_reason'] == 'stop':
             sta = 'stop'
         yield {
-            "data": {'message': message, 'sta': sta},
+            "data": json.dumps({'message': message, 'sta': sta})
         }
 
 
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=message_log,
-        stream=True
-    )
-    for chunk_msg in response:
-        if 'content' in chunk_msg['choices'][0]['delta']:
-            message = chunk_msg['choices'][0]['delta']['content']
-        else:
-            message = ''
-        sta = 'run'
-        if chunk_msg['choices'][0]['finish_reason'] == 'stop':
-            sta = 'stop'
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=message_log,
+            stream=True
+        )
+        for chunk_msg in response:
+            if 'content' in chunk_msg['choices'][0]['delta']:
+                message = chunk_msg['choices'][0]['delta']['content']
+            else:
+                message = ''
+            sta = 'run'
+            if chunk_msg['choices'][0]['finish_reason'] == 'stop':
+                sta = 'stop'
+            yield {
+                "data": json.dumps({'message': message, 'sta': sta, 'id': str(conversations_id)}),
+            }
+    except Exception as e:
         yield {
-            "data": {'message': message, 'sta': sta, 'id': conversations_id},
+            "data": json.dumps({'error': str(e), 'sta': 'error'}),
         }

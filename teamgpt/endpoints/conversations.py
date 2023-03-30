@@ -1,3 +1,4 @@
+import json
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
@@ -24,8 +25,9 @@ async def sse_conversations_message(
         message = ''
         agen = get_events()
         async for event in agen:
-            if event['data']['sta'] == 'run':
-                message = message + event['data']['message']
+            event_data = json.loads(event['data'])
+            if event_data['sta'] == 'run':
+                message = message + event_data['message']
                 yield event
             else:
                 yield event
@@ -145,8 +147,9 @@ async def create_conversations_message(
         message = ''
         agen = ask(gpt_key.key, message_log[::-1], model, conversations_id)
         async for event in agen:
-            if event['data']['sta'] == 'run':
-                message = message + event['data']['message']
+            event_data = json.loads(event['data'])
+            if event_data['sta'] == 'run':
+                message = message + event_data['message']
                 yield event
             else:
                 end_time = int(time.time())
