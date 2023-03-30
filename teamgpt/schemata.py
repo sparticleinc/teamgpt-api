@@ -105,3 +105,13 @@ AiCharacterOut = pydantic_model_creator(
     models.AiCharacter,
     name='AiCharacterOut',
 )
+
+
+class AiCharacterToOut(BaseModel):
+    title: str
+    description: str
+    instruction: str
+    user: UserOut
+
+    class Config:
+        orm_mode = True

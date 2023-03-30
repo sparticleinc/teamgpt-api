@@ -6,7 +6,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from teamgpt.models import User, AiCharacter, UserOrganization
 from teamgpt.parameters import Page, ListAPIParams, tortoise_paginate
-from teamgpt.schemata import AiCharacterIn, AiCharacterOut
+from teamgpt.schemata import AiCharacterIn, AiCharacterOut, AiCharacterToOut
 from teamgpt.settings import (auth)
 
 router = APIRouter(prefix='/ai_character', tags=['AiCharacter'])
@@ -14,23 +14,27 @@ router = APIRouter(prefix='/ai_character', tags=['AiCharacter'])
 
 # create ai_character
 @router.post(
-    '/',
+    '/{organization_id}',
     response_model=AiCharacterOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )
 async def create_ai_character(
         ai_character_input: AiCharacterIn,
+        organization_id: str,
         user: Auth0User = Security(auth.get_user)
 ):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     user_organization = await UserOrganization.get_or_none(user_id=user_info.id, organization_id=uuid.UUID(
-        ai_character_input.organization_id), deleted_at__isnull=True)
+        organization_id), deleted_at__isnull=True)
     if user_organization is None:
         raise HTTPException(
             status_code=400, detail='Not the member')
     ai_character_obj = await AiCharacter.create(
-        name=ai_character_input.name,
-        organization_id=uuid.UUID(ai_character_input.organization_id)
+        title=ai_character_input.title,
+        description=ai_character_input.description,
+        instruction=ai_character_input.instruction,
+        organization_id=uuid.UUID(organization_id),
+        user_id=user_info.id
     )
     return await AiCharacterOut.from_tortoise_orm(ai_character_obj)
 
@@ -81,7 +85,7 @@ async def edit_ai_character(
 # get org ai_character
 @router.get(
     '/{organization_id}',
-    response_model=Page[AiCharacterOut],
+    response_model=Page[AiCharacterToOut],
     dependencies=[Depends(auth.implicit_scheme)]
 )
 async def get_org_ai_character(
@@ -96,4 +100,4 @@ async def get_org_ai_character(
         raise HTTPException(
             status_code=400, detail='Not the member')
     ai_org = AiCharacter.filter(organization_id=uuid.UUID(organization_id), deleted_at__isnull=True)
-    return await tortoise_paginate(ai_org, params)
+    return await tortoise_paginate(ai_org, params, ['user'])
