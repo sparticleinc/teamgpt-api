@@ -89,3 +89,18 @@ ConversationsMessageOut = pydantic_model_creator(
     models.ConversationsMessage,
     name='ConversationsMessageOut',
 )
+
+AiCharacterIn = pydantic_model_creator(
+    models.AiCharacter,
+    name='AiCharacterIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+AiCharacterOut = pydantic_model_creator(
+    models.AiCharacter,
+    name='AiCharacterOut',
+)

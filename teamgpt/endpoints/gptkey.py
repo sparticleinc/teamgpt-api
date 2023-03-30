@@ -19,12 +19,12 @@ async def bind_gpt(
         gpt_input: GPTKeyIn,
         user: Auth0User = Security(auth.get_user)
 ):
-    user_info = await User.get_or_none(user_id=user.id)
-    organization_info = await Organization.get_or_none(id=uuid.UUID(gpt_input.organization_id))
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    organization_info = await Organization.get_or_none(id=uuid.UUID(gpt_input.organization_id), deleted_at__isnull=True)
     if user_info.id != organization_info.creator_id:
         raise HTTPException(
             status_code=400, detail='Not the creator')
-    gpt_obj = await GPTKey.get_or_none(organization_id=uuid.UUID(gpt_input.organization_id))
+    gpt_obj = await GPTKey.get_or_none(organization_id=uuid.UUID(gpt_input.organization_id), deleted_at__isnull=True)
     if gpt_obj:
         await GPTKey.filter(id=gpt_obj.id).update(key=gpt_input.key)
     else:
@@ -42,12 +42,12 @@ async def get_organization_gpt_key(
         organization_id: str,
         user: Auth0User = Security(auth.get_user)
 ):
-    user_info = await User.get_or_none(user_id=user.id)
-    organization_info = await Organization.get_or_none(id=uuid.UUID(organization_id))
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    organization_info = await Organization.get_or_none(id=uuid.UUID(organization_id), deleted_at__isnull=True)
     if user_info.id != organization_info.creator_id:
         raise HTTPException(
             status_code=400, detail='Not the creator')
-    gpt_obj = await GPTKey.get_or_none(organization_id=uuid.UUID(organization_id))
+    gpt_obj = await GPTKey.get_or_none(organization_id=uuid.UUID(organization_id), deleted_at__isnull=True)
     if gpt_obj:
         return await GPTKeyOut.from_tortoise_orm(gpt_obj)
     else:

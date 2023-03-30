@@ -34,10 +34,11 @@ class User(AbstractBaseModelWithDeletedAt):
     locale = fields.CharField(max_length=50, null=True)
     nickname = fields.CharField(max_length=100, null=True)
     current_organization = fields.CharField(max_length=100, null=True)
-    
+
     created_organizations: fields.ReverseRelation['Organization']
     user_organizations: fields.ReverseRelation['UserOrganization']
     user_conversations: fields.ReverseRelation['Conversations']
+    user_ai_characters: fields.ReverseRelation['AiCharacter']
 
     class PydanticMeta:
         exclude = (
@@ -56,6 +57,7 @@ class Organization(AbstractBaseModelWithDeletedAt):
     gpt_keys: fields.ReverseRelation['GPTKey']
     user_user_organizations: fields.ReverseRelation['UserOrganization']
     organization_conversations: fields.ReverseRelation['Conversations']
+    organization_ai_characters: fields.ReverseRelation['AiCharacter']
 
     creator: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         'models.User', related_name='created_organizations'
@@ -119,6 +121,23 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     content_type = fields.CharEnumField(ContentType, max_length=100, null=True)
     author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
     run_time = fields.IntField(null=True)
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+# ai角色
+class AiCharacter(AbstractBaseModelWithDeletedAt):
+    title = fields.CharField(max_length=255)
+    description = fields.TextField(null=True)
+    instruction = fields.TextField(null=True)
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_ai_characters')
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_ai_characters')
 
     class PydanticMeta:
         exclude = (

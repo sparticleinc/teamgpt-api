@@ -21,9 +21,10 @@ async def create_organization(
         org_input: OrganizationIn,
         user: Auth0User = Security(auth.get_user)
 ):
-    user_info = await User.get_or_none(user_id=user.id)
-    new_org_obj, created = await Organization.get_or_create(name=org_input.name, defaults={'picture': org_input.picture,
-                                                                                           'creator': user_info})
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    new_org_obj, created = await Organization.get_or_create(name=org_input.name, deleted_at__isnull=True,
+                                                            defaults={'picture': org_input.picture,
+                                                                      'creator': user_info})
     if not created:
         raise HTTPException(
             status_code=400, detail='Organization name already exists')
@@ -41,8 +42,8 @@ async def delete_organization(
         org_id: str,
         user: Auth0User = Security(auth.get_user)
 ):
-    user_info = await User.get_or_none(user_id=user.id)
-    org_obj = await Organization.get_or_none(id=org_id)
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization id already exists')
@@ -78,8 +79,8 @@ async def update_organization(
         org_input: OrganizationIn,
         user: Auth0User = Security(auth.get_user)
 ):
-    user_info = await User.get_or_none(user_id=user.id)
-    org_obj = await Organization.get_or_none(id=org_id)
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization id not found')
@@ -105,7 +106,8 @@ async def get_users_in_organization(
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization not found')
-    me_user_organization = await UserOrganization.get_or_none(organization_id=org_obj.id, user_id=user_info.id)
+    me_user_organization = await UserOrganization.get_or_none(organization_id=org_obj.id, user_id=user_info.id,
+                                                              deleted_at__isnull=True)
     if not me_user_organization:
         raise HTTPException(
             status_code=404, detail='User not found in this organization')
@@ -136,7 +138,8 @@ async def invite_user_to_organization(
             status_code=403, detail='User not authorized to invite this organization')
     if not user_info:
         user_info = await User.create(email=email, user_id=uuid.uuid4())
-    user_org_info = await UserOrganization.get_or_none(user=user_info, organization_id=org_obj.id)
+    user_org_info = await UserOrganization.get_or_none(user=user_info, organization_id=org_obj.id,
+                                                       deleted_at__isnull=True)
     if user_org_info:
         raise HTTPException(
             status_code=400, detail='User already in this organization')
