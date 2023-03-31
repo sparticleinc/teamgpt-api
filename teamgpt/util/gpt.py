@@ -1,7 +1,6 @@
 import json
 
 import openai
-from fastapi import HTTPException
 
 from teamgpt.settings import (GPT_KEY)
 
@@ -48,7 +47,8 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
             if chunk_msg['choices'][0]['finish_reason'] == 'stop':
                 sta = 'stop'
             yield {
-                "data": json.dumps({'message': message, 'sta': sta, 'id': str(conversations_id)}),
+                "data": json.dumps(
+                    {'message': message, 'sta': sta, 'conversation_id': str(conversations_id), 'msg_id': ''}),
             }
     except Exception as e:
         yield {

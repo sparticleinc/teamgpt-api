@@ -9,7 +9,7 @@ from typing import Union
 
 from teamgpt.enums import GptModel, ContentType, AutherUser
 from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey
-from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn
+from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
@@ -153,12 +153,14 @@ async def create_conversations_message(
                 yield event
             else:
                 end_time = int(time.time())
-                await ConversationsMessage.create(user=user_info, conversation_id=conversations_id,
-                                                  message=message,
-                                                  author_user=AutherUser.ASSISTANT,
-                                                  content_type=ContentType.TEXT,
-                                                  run_time=end_time - start_time
-                                                  )
+                new_msg_obj = await ConversationsMessage.create(user=user_info, conversation_id=conversations_id,
+                                                                message=message,
+                                                                author_user=AutherUser.ASSISTANT,
+                                                                content_type=ContentType.TEXT,
+                                                                run_time=end_time - start_time
+                                                                )
+                event_data['msg_id'] = str(new_msg_obj.id)
+                event['data'] = json.dumps(event_data)
                 yield event
                 await agen.aclose()
 
@@ -167,7 +169,7 @@ async def create_conversations_message(
 
 # get conversations message
 @router.get('/message/{conversations_id}',
-            response_model=Page[ConversationsMessageIn], dependencies=[Depends(auth.implicit_scheme)])
+            response_model=Page[ConversationsMessageOut], dependencies=[Depends(auth.implicit_scheme)])
 async def get_conversations_message(
         conversations_id: str,
         user: Auth0User = Security(auth.get_user),
