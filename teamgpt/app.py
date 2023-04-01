@@ -13,7 +13,7 @@ from fastapi import FastAPI, Request
 nest_asyncio.apply()
 
 app = FastAPI(
-    openapi_url='/openapi.json',
+    openapi_url='/api/openapi.json',
 )
 
 app.include_router(router)
@@ -49,7 +49,7 @@ app.add_middleware(
 @app.get('/api/docs-swagger', include_in_schema=False)
 async def get_documentation():
     return get_swagger_ui_html(
-        openapi_url='/openapi.json',
+        openapi_url='/api/openapi.json',
         title='Documentation',
     )
 
