@@ -126,29 +126,29 @@ async def create_conversations_message(
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     message_log = []
     # 判断是否存在会话,没有先创建会话
-    if conversations_id is None:
+    if conversation_id is None:
         if len(conversations_input_list) > 1:
             new_obj = await Conversations.create(user=user_info, title=title, organization_id=organization_id,
                                                  model=model)
-            conversations_id = new_obj.id
+            conversation_id = new_obj.id
         else:
             raise HTTPException(status_code=400, detail='Conversation format error')
     else:
-        con_obj = await Conversations.get_or_none(id=conversations_id, deleted_at__isnull=True)
+        con_obj = await Conversations.get_or_none(id=conversation_id, deleted_at__isnull=True)
         if con_obj is None:
             raise HTTPException(status_code=404, detail='Conversation not found')
         model = con_obj.model
 
     # 循环消息插入数据库
     for conversations_input in conversations_input_list:
-        await ConversationsMessage.create(user=user_info, conversation_id=conversations_id,
+        await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
                                           message=conversations_input.message,
                                           author_user=conversations_input.author_user,
                                           content_type=conversations_input.content_type,
                                           key=key,
                                           )
     # 查询前5条消息
-    con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversations_id,
+    con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversation_id,
                                                 deleted_at__isnull=True).order_by('-created_at').limit(context_number)
     for con in con_org:
         message_log.append({'role': con.author_user, 'content': con.message})
@@ -157,7 +157,7 @@ async def create_conversations_message(
 
     async def send_gpt():
         message = ''
-        agen = ask(key, message_log[::-1], model, conversations_id)
+        agen = ask(key, message_log[::-1], model, conversation_id)
         async for event in agen:
             event_data = json.loads(event['data'])
             if event_data['sta'] == 'run':
@@ -165,7 +165,7 @@ async def create_conversations_message(
                 yield event
             else:
                 end_time = int(time.time())
-                new_msg_obj = await ConversationsMessage.create(user=user_info, conversation_id=conversations_id,
+                new_msg_obj = await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
                                                                 message=message,
                                                                 author_user=AutherUser.ASSISTANT,
                                                                 content_type=ContentType.TEXT,
@@ -177,7 +177,7 @@ async def create_conversations_message(
                 await GptChatMessage.create(in_message=json.dumps(message_log, ensure_ascii=False), out_message=message,
                                             key=key,
                                             user=user_info,
-                                            organization_id=org_info.id, conversation_id=conversations_id, )
+                                            organization_id=org_info.id, conversation_id=conversation_id, )
                 yield event
                 await agen.aclose()
 
