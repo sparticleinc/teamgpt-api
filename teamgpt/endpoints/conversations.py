@@ -1,5 +1,6 @@
 import json
 import time
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
 from fastapi_pagination import Page
@@ -126,9 +127,11 @@ async def create_conversations_message(
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     message_log = []
     # 判断是否存在会话,没有先创建会话
-    if conversation_id is None:
+    conversation_obj = await Conversations.get_or_none(id=conversation_id, deleted_at__isnull=True)
+    if conversation_obj is None:
         if len(conversations_input_list) > 1:
-            new_obj = await Conversations.create(user=user_info, title=title, organization_id=organization_id,
+            new_obj = await Conversations.create(id=uuid.UUID(conversation_id), user=user_info, title=title,
+                                                 organization_id=organization_id,
                                                  model=model)
             conversation_id = new_obj.id
         else:
