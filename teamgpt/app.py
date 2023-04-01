@@ -44,15 +44,10 @@ app.add_middleware(
 )
 
 
-def get_openapi_url(request: Request, openapi_url: str) -> str:
-    root_path = request.scope.get('root_path')
-    return f'{root_path}/{openapi_url}' if root_path else openapi_url
-
-
 @app.get('/api/docs-swagger', include_in_schema=False)
-async def get_documentation(request: Request):
+async def get_documentation():
     return get_swagger_ui_html(
-        openapi_url=get_openapi_url(request, '/openapi.json'),
+        openapi_url='../openapi.json',
         title='Documentation',
     )
 
