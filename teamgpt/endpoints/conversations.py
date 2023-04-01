@@ -102,7 +102,7 @@ async def get_conversations(
 async def create_conversations_message(
         conversations_input_list: list[ConversationsMessageIn],
         organization_id: str,
-        conversations_id: Union[str, None] = None,
+        conversation_id: Union[str, None] = None,
         title: Union[str, None] = None,
         model: Union[GptModel, None] = Query(default=GptModel.GPT3TURBO),
         context_number: Union[int, None] = Query(default=10),
