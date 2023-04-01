@@ -8,7 +8,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 from typing import Union
 
 from teamgpt.enums import GptModel, ContentType, AutherUser, GptKeySource
-from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey
+from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey, GptChatMessage
 from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
@@ -146,7 +146,6 @@ async def create_conversations_message(
                                           author_user=conversations_input.author_user,
                                           content_type=conversations_input.content_type,
                                           key=key,
-
                                           )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversations_id,
@@ -175,6 +174,10 @@ async def create_conversations_message(
                                                                 )
                 event_data['msg_id'] = str(new_msg_obj.id)
                 event['data'] = json.dumps(event_data)
+                await GptChatMessage.create(in_message=json.dumps(message_log, ensure_ascii=False), out_message=message,
+                                            key=key,
+                                            user=user_info,
+                                            organization_id=org_info.id, conversation_id=conversations_id, )
                 yield event
                 await agen.aclose()
 

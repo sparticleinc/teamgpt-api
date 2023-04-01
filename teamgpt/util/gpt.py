@@ -3,6 +3,7 @@ import json
 import openai
 
 from teamgpt.settings import (GPT_KEY)
+from teamgpt.models import GptChatMessage
 
 
 async def get_events():
@@ -30,7 +31,7 @@ async def get_events():
         }
 
 
-async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
+async def ask(api_key: str, message_log: list, model: str, conversations_id: str, gpt_chat=None):
     openai.api_key = api_key
     try:
         response = openai.ChatCompletion.create(

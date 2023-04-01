@@ -49,12 +49,10 @@ def get_openapi_url(request: Request, openapi_url: str) -> str:
     return f'{root_path}/{openapi_url}' if root_path else openapi_url
 
 
-@app.get('/docs-swagger', include_in_schema=False)
+@app.get('/api/docs-swagger', include_in_schema=False)
 async def get_documentation(request: Request):
-    root_path = request.scope.get('root_path')
     return get_swagger_ui_html(
-        openapi_url=get_openapi_url(request, 'openapi.json'),
-        oauth2_redirect_url=f'{root_path}/docs-swagger/oauth2-redirect',
+        openapi_url=get_openapi_url(request, '/openapi.json'),
         title='Documentation',
     )
 

@@ -39,6 +39,7 @@ class User(AbstractBaseModelWithDeletedAt):
     user_organizations: fields.ReverseRelation['UserOrganization']
     user_conversations: fields.ReverseRelation['Conversations']
     user_ai_characters: fields.ReverseRelation['AiCharacter']
+    user_gpt_chat_messages: fields.ReverseRelation['GptChatMessage']
 
     class PydanticMeta:
         exclude = (
@@ -60,6 +61,7 @@ class Organization(AbstractBaseModelWithDeletedAt):
     user_user_organizations: fields.ReverseRelation['UserOrganization']
     organization_conversations: fields.ReverseRelation['Conversations']
     organization_ai_characters: fields.ReverseRelation['AiCharacter']
+    organization_gpt_chat_messages: fields.ReverseRelation['GptChatMessage']
 
     creator: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         'models.User', related_name='created_organizations'
@@ -117,6 +119,8 @@ class Conversations(AbstractBaseModelWithDeletedAt):
     user = fields.ForeignKeyField(
         'models.User', related_name='user_conversations')
     model = fields.CharEnumField(GptModel, max_length=100, null=True)
+    conversation_gpt_chat_messages: fields.ReverseRelation['GptChatMessage']
+    conversation_messages: fields.ReverseRelation['ConversationsMessage']
 
     class PydanticMeta:
         exclude = (
@@ -134,7 +138,6 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     content_type = fields.CharEnumField(ContentType, max_length=100, null=True)
     author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
     run_time = fields.IntField(null=True)
-    token_num = fields.IntField(null=True, default=0)
     key = fields.CharField(max_length=255, null=True)
 
     class PydanticMeta:
@@ -153,6 +156,25 @@ class AiCharacter(AbstractBaseModelWithDeletedAt):
         'models.Organization', related_name='organization_ai_characters')
     user = fields.ForeignKeyField(
         'models.User', related_name='user_ai_characters')
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class GptChatMessage(AbstractBaseModelWithDeletedAt):
+    in_message = fields.TextField(null=True)
+    out_message = fields.TextField(null=True)
+    token_num = fields.IntField(null=True, default=0)
+    key = fields.CharField(max_length=255, null=True)
+    conversation = fields.ForeignKeyField(
+        'models.Conversations', related_name='conversation_gpt_chat_messages')
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_gpt_chat_messages')
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_gpt_chat_messages')
 
     class PydanticMeta:
         exclude = (
