@@ -12,7 +12,9 @@ from fastapi import FastAPI, Request
 
 nest_asyncio.apply()
 
-app = FastAPI()
+app = FastAPI(
+    openapi_url='/openapi.json',
+)
 
 app.include_router(router)
 register_tortoise(
