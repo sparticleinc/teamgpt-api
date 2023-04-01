@@ -157,23 +157,27 @@ async def create_conversations_message(
 
     async def send_gpt():
         message = ''
+        new_msg_obj_id = ''
         agen = ask(key, message_log[::-1], model, conversation_id)
         async for event in agen:
             event_data = json.loads(event['data'])
             if event_data['sta'] == 'run':
                 message = message + event_data['message']
+                if new_msg_obj_id == '':
+                    new_msg_obj = await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
+                                                                    message=message,
+                                                                    author_user=AutherUser.ASSISTANT,
+                                                                    content_type=ContentType.TEXT,
+                                                                    key=key,
+                                                                    )
+                    new_msg_obj_id = str(new_msg_obj.id)
+                event_data['msg_id'] = new_msg_obj_id
+                event['data'] = json.dumps(event_data)
                 yield event
             else:
                 end_time = int(time.time())
-                new_msg_obj = await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
-                                                                message=message,
-                                                                author_user=AutherUser.ASSISTANT,
-                                                                content_type=ContentType.TEXT,
-                                                                run_time=end_time - start_time,
-                                                                key=key,
-                                                                )
-                event_data['msg_id'] = str(new_msg_obj.id)
-                event['data'] = json.dumps(event_data)
+                await ConversationsMessage.filter(id=new_msg_obj_id).update(message=message,
+                                                                            run_time=end_time - start_time)
                 await GptChatMessage.create(in_message=json.dumps(message_log, ensure_ascii=False), out_message=message,
                                             key=key,
                                             user=user_info,
