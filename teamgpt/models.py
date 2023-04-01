@@ -1,9 +1,8 @@
-import uuid
 from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role, ContentType, AutherUser, GptModel
+from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource
 
 
 class AbstractBaseModel(models.Model):
@@ -34,6 +33,7 @@ class User(AbstractBaseModelWithDeletedAt):
     locale = fields.CharField(max_length=50, null=True)
     nickname = fields.CharField(max_length=100, null=True)
     current_organization = fields.CharField(max_length=100, null=True)
+    super = fields.BooleanField(default=False, null=True)
 
     created_organizations: fields.ReverseRelation['Organization']
     user_organizations: fields.ReverseRelation['UserOrganization']
@@ -52,6 +52,8 @@ class User(AbstractBaseModelWithDeletedAt):
 class Organization(AbstractBaseModelWithDeletedAt):
     name = fields.CharField(max_length=100, unique=True)
     picture = fields.CharField(max_length=255, null=True)
+    gpt_key_source = fields.CharEnumField(GptKeySource, max_length=255, null=True)
+
     users = fields.ManyToManyField('models.User', related_name='organizations')
 
     gpt_keys: fields.ReverseRelation['GPTKey']
@@ -97,6 +99,17 @@ class GPTKey(AbstractBaseModelWithDeletedAt):
         )
 
 
+class SysGPTKey(AbstractBaseModelWithDeletedAt):
+    key = fields.CharField(max_length=255)
+    remarks = fields.CharField(max_length=255, null=True)
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
 class Conversations(AbstractBaseModelWithDeletedAt):
     title = fields.CharField(max_length=255)
     organization = fields.ForeignKeyField(
@@ -121,6 +134,8 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     content_type = fields.CharEnumField(ContentType, max_length=100, null=True)
     author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
     run_time = fields.IntField(null=True)
+    token_num = fields.IntField(null=True, default=0)
+    key = fields.CharField(max_length=255, null=True)
 
     class PydanticMeta:
         exclude = (

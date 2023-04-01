@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi_pagination import Page
-from teamgpt.enums import Role
+from teamgpt.enums import Role, GptKeySource
 from teamgpt.models import Organization, User, UserOrganization
 from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut
 from teamgpt.settings import (auth)
@@ -22,9 +22,12 @@ async def create_organization(
         user: Auth0User = Security(auth.get_user)
 ):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    if org_input.gpt_key_source is None:
+        org_input.gpt_key_source = GptKeySource.ORG
     new_org_obj, created = await Organization.get_or_create(name=org_input.name, deleted_at__isnull=True,
                                                             defaults={'picture': org_input.picture,
-                                                                      'creator': user_info})
+                                                                      'creator': user_info,
+                                                                      'gpt_key_source': org_input.gpt_key_source})
     if not created:
         raise HTTPException(
             status_code=400, detail='Organization name already exists')
@@ -87,6 +90,8 @@ async def update_organization(
     if org_obj.creator_id != user_info.id:
         raise HTTPException(
             status_code=403, detail='User not authorized to update this organization')
+    if org_input.gpt_key_source is None:
+        org_input.gpt_key_source = GptKeySource.ORG
     await org_obj.update_from_dict(org_input.dict()).save()
     return await OrganizationOut.from_tortoise_orm(org_obj)
 

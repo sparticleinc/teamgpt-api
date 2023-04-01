@@ -82,13 +82,17 @@ ConversationsMessageIn = pydantic_model_creator(
         'id',
         'created_at',
         'updated_at',
-        'run_time'
+        'run_time',
+        'key'
     ),
 )
 
 ConversationsMessageOut = pydantic_model_creator(
     models.ConversationsMessage,
     name='ConversationsMessageOut',
+    exclude=(
+        'key',
+    ),
 )
 
 AiCharacterIn = pydantic_model_creator(
@@ -115,3 +119,19 @@ class AiCharacterToOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+SysGPTKeyIn = pydantic_model_creator(
+    models.SysGPTKey,
+    name='SysGPTKeyIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+SysGPTKeyOut = pydantic_model_creator(
+    models.SysGPTKey,
+    name='SysGPTKeyOut',
+)

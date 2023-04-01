@@ -7,8 +7,8 @@ from sse_starlette import EventSourceResponse
 from starlette.status import HTTP_204_NO_CONTENT
 from typing import Union
 
-from teamgpt.enums import GptModel, ContentType, AutherUser
-from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey
+from teamgpt.enums import GptModel, ContentType, AutherUser, GptKeySource
+from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey
 from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
@@ -108,6 +108,21 @@ async def create_conversations_message(
         context_number: Union[int, None] = Query(default=10),
         user: Auth0User = Security(auth.get_user)
 ):
+    # 查询gpt-key配置信息,判断是否是系统的
+    key = ''
+    org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
+    if org_info is None:
+        raise HTTPException(status_code=404, detail='Organization not found')
+    if org_info.gpt_key_source is GptKeySource.SYSTEM:
+        sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
+        if sys_gpt_key is None:
+            raise HTTPException(status_code=404, detail='SYS GPT key not found')
+        key = sys_gpt_key.key
+    else:
+        gpt_key = await GPTKey.get_or_none(organization_id=organization_id, deleted_at__isnull=True)
+        if gpt_key is None:
+            raise HTTPException(status_code=404, detail='GPT key not found')
+        key = gpt_key.key
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     message_log = []
     # 判断是否存在会话,没有先创建会话
@@ -120,32 +135,30 @@ async def create_conversations_message(
             raise HTTPException(status_code=400, detail='Conversation format error')
     else:
         con_obj = await Conversations.get_or_none(id=conversations_id, deleted_at__isnull=True)
-        model = con_obj.model
         if con_obj is None:
             raise HTTPException(status_code=404, detail='Conversation not found')
+        model = con_obj.model
+
     # 循环消息插入数据库
     for conversations_input in conversations_input_list:
         await ConversationsMessage.create(user=user_info, conversation_id=conversations_id,
                                           message=conversations_input.message,
                                           author_user=conversations_input.author_user,
-                                          content_type=conversations_input.content_type
+                                          content_type=conversations_input.content_type,
+                                          key=key,
+
                                           )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversations_id,
                                                 deleted_at__isnull=True).order_by('-created_at').limit(context_number)
     for con in con_org:
         message_log.append({'role': con.author_user, 'content': con.message})
-    # 查询gpt-key配置信息
-    gpt_key = await GPTKey.get_or_none(organization_id=organization_id, deleted_at__isnull=True)
-    if gpt_key is None:
-        raise HTTPException(status_code=404, detail='GPT key not found')
-
     # 发送sse请求数据
     start_time = int(time.time())
 
     async def send_gpt():
         message = ''
-        agen = ask(gpt_key.key, message_log[::-1], model, conversations_id)
+        agen = ask(key, message_log[::-1], model, conversations_id)
         async for event in agen:
             event_data = json.loads(event['data'])
             if event_data['sta'] == 'run':
@@ -157,7 +170,8 @@ async def create_conversations_message(
                                                                 message=message,
                                                                 author_user=AutherUser.ASSISTANT,
                                                                 content_type=ContentType.TEXT,
-                                                                run_time=end_time - start_time
+                                                                run_time=end_time - start_time,
+                                                                key=key,
                                                                 )
                 event_data['msg_id'] = str(new_msg_obj.id)
                 event['data'] = json.dumps(event_data)
