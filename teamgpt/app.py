@@ -47,7 +47,7 @@ app.add_middleware(
 @app.get('/api/docs-swagger', include_in_schema=False)
 async def get_documentation():
     return get_swagger_ui_html(
-        openapi_url='../openapi.json',
+        openapi_url='/backend/openapi.json',
         title='Documentation',
     )
 
