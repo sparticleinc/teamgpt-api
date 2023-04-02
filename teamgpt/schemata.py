@@ -112,6 +112,7 @@ AiCharacterOut = pydantic_model_creator(
 
 
 class AiCharacterToOut(BaseModel):
+    id: uuid.UUID
     title: str
     description: str
     instruction: str
