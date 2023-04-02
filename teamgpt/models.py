@@ -53,7 +53,7 @@ class User(AbstractBaseModelWithDeletedAt):
 class Organization(AbstractBaseModelWithDeletedAt):
     name = fields.CharField(max_length=100, unique=True)
     picture = fields.CharField(max_length=255, null=True)
-    gpt_key_source = fields.CharEnumField(GptKeySource, max_length=255, null=True)
+    gpt_key_source = fields.CharField(max_length=255, null=True)
 
     users = fields.ManyToManyField('models.User', related_name='organizations')
 
