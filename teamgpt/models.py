@@ -54,7 +54,9 @@ class Organization(AbstractBaseModelWithDeletedAt):
     name = fields.CharField(max_length=100, unique=True)
     picture = fields.CharField(max_length=255, null=True)
     gpt_key_source = fields.CharField(max_length=255, null=True)
-
+    code = fields.CharField(max_length=255, null=True)
+    code_expiration_time = fields.DatetimeField(null=True)
+    
     users = fields.ManyToManyField('models.User', related_name='organizations')
 
     gpt_keys: fields.ReverseRelation['GPTKey']
