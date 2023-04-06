@@ -127,7 +127,7 @@ async def create_conversations_message(
     # 循环消息插入数据库
     for conversations_input in conversations_input_list:
         if conversations_input.id is not None:
-            await ConversationsMessage.create(id=uuid.UUID(conversations_input.id), user=user_info,
+            await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
                                               conversation_id=conversation_id,
                                               message=conversations_input.message,
                                               author_user=conversations_input.author_user,
