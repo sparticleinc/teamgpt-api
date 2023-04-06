@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -41,16 +42,24 @@ def do_logout(url: Optional[str] = None):
     response_model=UserOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )
-async def get_current_user(user: Auth0User = Security(auth.get_user)):
+async def get_current_user(user: Auth0User = Security(auth.get_user), code: Optional[str] = None):
     auth_user = await get_user_info(user.id)
     user_obj = await User.get_or_none(email=auth_user['email'])
     if user_obj:
         await User.filter(id=user_obj.id).update(user_id=user.id, name=auth_user['name'],
                                                  picture=auth_user['picture'],
                                                  nickname=auth_user['nickname'])
-        new_user_obj = await User.get_or_none(email=auth_user['email'])
-        return await UserOut.from_tortoise_orm(new_user_obj)
-    user_obj = await User.create(**auth_user)
+        user_obj = await User.get_or_none(email=auth_user['email'])
+    else:
+        user_obj = await User.create(**auth_user)
+    if code is not None:
+        org_obj = await Organization.get_or_none(code=code, deleted_at__isnull=True,
+                                                 code_expiration_time__gt=datetime.now())
+        if org_obj is not None:
+            user_org = await UserOrganization.get_or_none(user_id=user_obj.id,
+                                                          organization_id=org_obj.id, deleted_at__isnull=True)
+            if user_org is None:
+                await UserOrganization.create(user_id=user_obj.id, organization_id=org_obj.id, role='member')
     return await UserOut.from_tortoise_orm(user_obj)
 
 

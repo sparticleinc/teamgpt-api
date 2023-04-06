@@ -12,6 +12,14 @@ UserOut = pydantic_model_creator(
 OrganizationOut = pydantic_model_creator(
     models.Organization,
     name='OrganizationOut',
+    exclude=(
+        'code',
+        'code_expiration_time'
+    ),
+)
+OrganizationSuperOut = pydantic_model_creator(
+    models.Organization,
+    name='OrganizationSuperOut',
 )
 
 OrganizationIn = pydantic_model_creator(
@@ -116,6 +124,15 @@ class AiCharacterToOut(BaseModel):
     title: str
     description: str
     instruction: str
+    user: UserOut
+
+    class Config:
+        orm_mode = True
+
+
+class OrganizationShareOut(BaseModel):
+    id: uuid.UUID
+    organization: OrganizationOut
     user: UserOut
 
     class Config:

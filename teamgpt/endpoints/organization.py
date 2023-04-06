@@ -1,15 +1,61 @@
 import uuid
-
+import random
+from datetime import datetime, timedelta
+import pytz
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi_pagination import Page
 from teamgpt.enums import Role, GptKeySource
 from teamgpt.models import Organization, User, UserOrganization
-from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut
+from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
+from teamgpt.util import random_run
 
 router = APIRouter(prefix='/organization', tags=['Organization'])
+
+
+# 查询自己在哪些Organization
+@router.get(
+    '/me/info',
+    dependencies=[Depends(auth.implicit_scheme)],
+    response_model=Page[UserOrganizationToOut]
+)
+async def get_my_organizations(
+        params: ListAPIParams = Depends(),
+        user: Auth0User = Security(auth.get_user)
+):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    if user_info is None:
+        raise HTTPException(
+            status_code=404, detail='User not found')
+    queryset = UserOrganization.filter(
+        user=user_info.id, deleted_at__isnull=True)
+    return await tortoise_paginate(queryset, params, ['organization', 'user'])
+
+
+# 更新org的code
+@router.put(
+    '/{org_id}/code',
+    response_model=OrganizationSuperOut,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def update_organization_code(
+        org_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
+    if not org_obj:
+        raise HTTPException(
+            status_code=404, detail='Organization not found')
+    if org_obj.creator_id != user_info.id:
+        raise HTTPException(
+            status_code=403, detail='User not authorized to update this organization')
+    org_obj.code = random_run.number(6)
+    org_obj.code_expiration_time = datetime.now() + timedelta(days=7)
+    await org_obj.save()
+    return await OrganizationSuperOut.from_tortoise_orm(org_obj)
 
 
 @router.post(
@@ -59,17 +105,27 @@ async def delete_organization(
 
 @router.get(
     '/{org_id}',
-    response_model=OrganizationOut,
+    response_model=OrganizationSuperOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )
 async def get_organization(
         org_id: str,
+        user: Auth0User = Security(auth.get_user)
 ):
+    user_obj = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
+    # 判断code是否过期,如果过期了生成新的code
+    if org_obj.code_expiration_time is None or org_obj.code_expiration_time < datetime.now(pytz.utc):
+        org_obj.code = random_run.number(6)
+        org_obj.code_expiration_time = datetime.now() + timedelta(days=7)
+        await org_obj.save()
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization id not found')
-    return await OrganizationOut.from_tortoise_orm(org_obj)
+    if user_obj.id != org_obj.creator_id:
+        org_obj.code = ''
+        org_obj.code_expiration_time = None
+    return await OrganizationSuperOut.from_tortoise_orm(org_obj)
 
 
 @router.put(
@@ -150,19 +206,3 @@ async def invite_user_to_organization(
             status_code=400, detail='User already in this organization')
     await UserOrganization.create(user=user_info, organization_id=org_obj.id, role=Role.MEMBER)
     return await OrganizationOut.from_tortoise_orm(org_obj)
-
-
-# 查询自己在哪些Organization
-@router.get(
-    '/me/info',
-    dependencies=[Depends(auth.implicit_scheme)],
-    response_model=Page[UserOrganizationToOut]
-)
-async def get_my_organizations(
-        params: ListAPIParams = Depends(),
-        user: Auth0User = Security(auth.get_user)
-):
-    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
-    queryset = UserOrganization.filter(
-        user=user_info.id, deleted_at__isnull=True)
-    return await tortoise_paginate(queryset, params, ['organization', 'user'])
