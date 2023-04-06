@@ -14,7 +14,7 @@ from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMes
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
-from teamgpt.util.gpt import get_events, ask
+from teamgpt.util.gpt import ask
 
 router = APIRouter(prefix='/conversations', tags=['Conversations'])
 
@@ -126,12 +126,22 @@ async def create_conversations_message(
 
     # 循环消息插入数据库
     for conversations_input in conversations_input_list:
-        await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
-                                          message=conversations_input.message,
-                                          author_user=conversations_input.author_user,
-                                          content_type=conversations_input.content_type,
-                                          key=key,
-                                          )
+        if conversations_input.id is not None:
+            await ConversationsMessage.create(id=uuid.UUID(conversations_input.id), user=user_info,
+                                              conversation_id=conversation_id,
+                                              message=conversations_input.message,
+                                              author_user=conversations_input.author_user,
+                                              content_type=conversations_input.content_type,
+                                              key=key,
+                                              )
+        else:
+            await ConversationsMessage.create(user=user_info,
+                                              conversation_id=conversation_id,
+                                              message=conversations_input.message,
+                                              author_user=conversations_input.author_user,
+                                              content_type=conversations_input.content_type,
+                                              key=key,
+                                              )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversation_id,
                                                 deleted_at__isnull=True).order_by('-created_at').limit(context_number)

@@ -44,6 +44,9 @@ async def get_organization_gpt_key(
 ):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     organization_info = await Organization.get_or_none(id=uuid.UUID(organization_id), deleted_at__isnull=True)
+    if organization_info is None:
+        raise HTTPException(
+            status_code=404, detail='Not found')
     if user_info.id != organization_info.creator_id:
         raise HTTPException(
             status_code=400, detail='Not the creator')

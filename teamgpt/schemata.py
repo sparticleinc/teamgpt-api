@@ -87,7 +87,6 @@ ConversationsMessageIn = pydantic_model_creator(
     models.ConversationsMessage,
     name='ConversationsMessageIn',
     exclude=(
-        'id',
         'created_at',
         'updated_at',
         'run_time',
