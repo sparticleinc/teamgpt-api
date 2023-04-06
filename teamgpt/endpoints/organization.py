@@ -10,6 +10,8 @@ from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationTo
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
+from fastapi_pagination.ext.tortoise import paginate as _tortoise_paginate
+
 from teamgpt.util import random_run
 
 router = APIRouter(prefix='/organization', tags=['Organization'])
@@ -29,9 +31,17 @@ async def get_my_organizations(
     if user_info is None:
         raise HTTPException(
             status_code=404, detail='User not found')
-    queryset = UserOrganization.filter(
-        user=user_info.id, deleted_at__isnull=True)
-    return await tortoise_paginate(queryset, params, ['organization', 'user'])
+    page_list = await _tortoise_paginate(
+        query=UserOrganization.filter(
+            user=user_info.id, deleted_at__isnull=True),
+        params=params,
+        prefetch_related=['organization', 'user'],
+    )
+    if len(page_list.items) > 0:
+        for i, k in enumerate(page_list.items):
+            page_list.items[i].user = await User.get_or_none(id=page_list.items[i].organization.creator_id,
+                                                             deleted_at__isnull=True)
+    return page_list
 
 
 # 更新org的code
