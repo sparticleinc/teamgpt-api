@@ -2,36 +2,8 @@ import json
 
 import openai
 
-from teamgpt.settings import (GPT_KEY)
-from teamgpt.models import GptChatMessage
 
-
-async def get_events():
-    openai.api_key = GPT_KEY
-    message_log = [
-        {"content": "Hello, I am a chat robot.", "role": "system"},
-        {"content": "you name", "role": "user"}
-    ]
-
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=message_log,
-        stream=True
-    )
-    for chunk in response:
-        if 'content' in chunk['choices'][0]['delta']:
-            message = chunk['choices'][0]['delta']['content']
-        else:
-            message = ''
-        sta = 'run'
-        if chunk['choices'][0]['finish_reason'] == 'stop':
-            sta = 'stop'
-        yield {
-            "data": json.dumps({'message': message, 'sta': sta})
-        }
-
-
-async def ask(api_key: str, message_log: list, model: str, conversations_id: str, gpt_chat=None):
+async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
     try:
         response = openai.ChatCompletion.create(

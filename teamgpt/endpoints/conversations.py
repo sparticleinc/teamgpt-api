@@ -19,24 +19,6 @@ from teamgpt.util.gpt import get_events, ask
 router = APIRouter(prefix='/conversations', tags=['Conversations'])
 
 
-@router.get('/sse-demo')
-async def sse_conversations_message(
-):
-    async def event_generator():
-        message = ''
-        agen = get_events()
-        async for event in agen:
-            event_data = json.loads(event['data'])
-            if event_data['sta'] == 'run':
-                message = message + event_data['message']
-                yield event
-            else:
-                yield event
-                await agen.aclose()
-
-    return EventSourceResponse(event_generator())
-
-
 # create conversations
 @router.post('/{organization_id}', response_model=ConversationsOut, dependencies=[Depends(auth.implicit_scheme)])
 async def create_conversations(
