@@ -88,9 +88,10 @@ async def create_conversations_message(
         conversation_id: Union[str, None] = None,
         title: Union[str, None] = None,
         model: Union[GptModel, None] = Query(default=GptModel.GPT3TURBO),
-        context_number: Union[int, None] = Query(default=10),
+        context_number: Union[int, None] = Query(default=5),
         user: Auth0User = Security(auth.get_user)
 ):
+    log_start_time = int(time.time())
     # 查询gpt-key配置信息,判断是否是系统的
     key = ''
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
@@ -126,27 +127,21 @@ async def create_conversations_message(
 
     # 循环消息插入数据库
     for conversations_input in conversations_input_list:
-        if conversations_input.id is not None:
-            await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
-                                              conversation_id=conversation_id,
-                                              message=conversations_input.message,
-                                              author_user=conversations_input.author_user,
-                                              content_type=conversations_input.content_type,
-                                              key=key,
-                                              )
-        else:
-            await ConversationsMessage.create(user=user_info,
-                                              conversation_id=conversation_id,
-                                              message=conversations_input.message,
-                                              author_user=conversations_input.author_user,
-                                              content_type=conversations_input.content_type,
-                                              key=key,
-                                              )
+        await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
+                                          conversation_id=conversation_id,
+                                          message=conversations_input.message,
+                                          author_user=conversations_input.author_user,
+                                          content_type=conversations_input.content_type,
+                                          key=key,
+                                          )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversation_id,
                                                 deleted_at__isnull=True).order_by('-created_at').limit(context_number)
     for con in con_org:
         message_log.append({'role': con.author_user, 'content': con.message})
+    log_end_time = int(time.time())
+    log_run_time = log_end_time - log_start_time
+    print(log_run_time, "log_run_time")
     # 发送sse请求数据
     start_time = int(time.time())
 
