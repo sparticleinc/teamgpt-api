@@ -3,9 +3,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Security, HTTPException
 from starlette.status import HTTP_204_NO_CONTENT
 
-from teamgpt.models import GptTopic
+from teamgpt.models import GptTopic, GptPrompt
 from teamgpt.parameters import Page, tortoise_paginate, ListAPIParams
-from teamgpt.schemata import GptTopicOut, GptTopicIn
+from teamgpt.schemata import GptTopicOut, GptTopicIn, GptPromptIn, GptPromptOut
 
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
@@ -81,3 +81,55 @@ async def update_gpt_topic(
             status_code=404, detail='Not found')
     await gpt_obj.update_from_dict(gpt_topic_input.dict(exclude_unset=True)).save()
     return await GptTopicOut.from_tortoise_orm(gpt_obj)
+
+
+# 新增一个GptPrompt
+@router.post(
+    '/',
+    response_model=GptPromptOut,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def create_gpt_prompt(
+        gpt_prompt_input: GptPromptIn,
+        user: Auth0User = Security(auth.get_user)
+):
+    new_gpt_prompt_obj = await GptPrompt.create(**gpt_prompt_input.dict(exclude_unset=True))
+    return await GptPromptOut.from_tortoise_orm(new_gpt_prompt_obj)
+
+
+# 删除一个GptPrompt
+@router.delete(
+    '/{gpt_prompt_id}',
+    status_code=HTTP_204_NO_CONTENT,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def delete_gpt_prompt(
+        gpt_prompt_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    gpt_obj = await GptPrompt.get_or_none(id=gpt_prompt_id, deleted_at__isnull=True)
+    if gpt_obj is None:
+        raise HTTPException(
+            status_code=404, detail='Not found')
+    await gpt_obj.soft_delete()
+
+
+# 修改一个GptPrompt
+@router.put(
+    '/{gpt_prompt_id}',
+    response_model=GptPromptOut,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def update_gpt_prompt(
+        gpt_prompt_id: str,
+        gpt_prompt_input: GptPromptIn,
+        user: Auth0User = Security(auth.get_user)
+):
+    gpt_obj = await GptPrompt.get_or_none(id=gpt_prompt_id, deleted_at__isnull=True)
+    if gpt_obj is None:
+        raise HTTPException(
+            status_code=404, detail='Not found')
+    await gpt_obj.update_from_dict(gpt_prompt_input.dict(exclude_unset=True)).save()
+    return await GptPromptOut.from_tortoise_orm(gpt_obj)
+
+# 查询
