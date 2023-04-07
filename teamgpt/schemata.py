@@ -152,3 +152,33 @@ SysGPTKeyOut = pydantic_model_creator(
     models.SysGPTKey,
     name='SysGPTKeyOut',
 )
+
+GptPromptIn = pydantic_model_creator(
+    models.GptPrompt,
+    name='GptPromptIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+GptPromptOut = pydantic_model_creator(
+    models.GptPrompt,
+    name='GptPromptOut',
+)
+
+GptTopicIn = pydantic_model_creator(
+    models.GptTopic,
+    name='GptTopicIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+GptTopicOut = pydantic_model_creator(
+    models.GptTopic,
+    name='GptTopicOut',
+)

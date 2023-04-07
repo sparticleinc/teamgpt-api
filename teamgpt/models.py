@@ -2,7 +2,7 @@ from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource
+from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource, Belong
 
 
 class AbstractBaseModel(models.Model):
@@ -40,6 +40,7 @@ class User(AbstractBaseModelWithDeletedAt):
     user_conversations: fields.ReverseRelation['Conversations']
     user_ai_characters: fields.ReverseRelation['AiCharacter']
     user_gpt_chat_messages: fields.ReverseRelation['GptChatMessage']
+    user_gpt_prompt: fields.ReverseRelation['GptPrompt']
 
     class PydanticMeta:
         exclude = (
@@ -56,7 +57,7 @@ class Organization(AbstractBaseModelWithDeletedAt):
     gpt_key_source = fields.CharField(max_length=255, null=True)
     code = fields.CharField(max_length=255, null=True)
     code_expiration_time = fields.DatetimeField(null=True)
-    
+
     users = fields.ManyToManyField('models.User', related_name='organizations')
 
     gpt_keys: fields.ReverseRelation['GPTKey']
@@ -64,6 +65,9 @@ class Organization(AbstractBaseModelWithDeletedAt):
     organization_conversations: fields.ReverseRelation['Conversations']
     organization_ai_characters: fields.ReverseRelation['AiCharacter']
     organization_gpt_chat_messages: fields.ReverseRelation['GptChatMessage']
+    organization_gpt_prompt: fields.ReverseRelation['GptPrompt']
+    organization_gpt_topic: fields.ReverseRelation['GptTopic']
+    user_gpt_topic: fields.ReverseRelation['GptTopic']
 
     creator: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         'models.User', related_name='created_organizations'
@@ -177,6 +181,46 @@ class GptChatMessage(AbstractBaseModelWithDeletedAt):
         'models.Organization', related_name='organization_gpt_chat_messages')
     user = fields.ForeignKeyField(
         'models.User', related_name='user_gpt_chat_messages')
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class GptTopic(AbstractBaseModelWithDeletedAt):
+    title = fields.CharField(max_length=255)
+    description = fields.TextField(null=True)
+    pid = fields.UUIDField(null=True)
+
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_gpt_topic', null=True)
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_gpt_topic', null=True)
+
+    gpt_topic_gpt_prompt: fields.ReverseRelation['GptPrompt']
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class GptPrompt(AbstractBaseModelWithDeletedAt):
+    belong = fields.CharEnumField(Belong, max_length=100, null=True)
+    prompt_template = fields.TextField(null=True)
+    prompt_hint = fields.TextField(null=True)
+    teaser = fields.TextField(null=True)
+    title = fields.CharField(max_length=255, null=True)
+
+    gpt_topic = fields.ForeignKeyField(
+        'models.GptTopic', related_name='gpt_topic_gpt_prompt', null=True)
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_gpt_prompt', null=True)
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_gpt_prompt', null=True)
 
     class PydanticMeta:
         exclude = (

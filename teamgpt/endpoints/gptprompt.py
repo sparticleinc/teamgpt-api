@@ -1,0 +1,83 @@
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Security, HTTPException
+from starlette.status import HTTP_204_NO_CONTENT
+
+from teamgpt.models import GptTopic
+from teamgpt.parameters import Page, tortoise_paginate, ListAPIParams
+from teamgpt.schemata import GptTopicOut, GptTopicIn
+
+from teamgpt.settings import (auth)
+from fastapi_auth0 import Auth0User
+
+router = APIRouter(prefix='/gpt_prompt', tags=['GptPrompt'])
+
+
+# 增加一个GptTopic
+@router.post(
+    '/gpt_topic',
+    response_model=GptTopicOut,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def create_gpt_topic(
+        gpt_topic_input: GptTopicIn,
+        user: Auth0User = Security(auth.get_user)
+):
+    new_gpt_topic_obj = await GptTopic.create(**gpt_topic_input.dict(exclude_unset=True))
+    return await GptTopicOut.from_tortoise_orm(new_gpt_topic_obj)
+
+
+# 获取所有的GptTopic
+@router.get(
+    '/gpt_topics',
+    response_model=Page[GptTopicOut],
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def get_gpt_topics(
+        user: Auth0User = Security(auth.get_user),
+        pid: Optional[str] = None,
+        params: ListAPIParams = Depends()
+):
+    query_params = {'deleted_at__isnull': True}
+    if pid is not None:
+        query_params['pid'] = pid
+    else:
+        query_params['pid__isnull'] = True
+    gpt_topics = GptTopic.filter(**query_params)
+    return await tortoise_paginate(gpt_topics, params)
+
+
+# 删除一个GptTopic
+@router.delete(
+    '/gpt_topic/{gpt_topic_id}',
+    status_code=HTTP_204_NO_CONTENT,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def delete_gpt_topic(
+        gpt_topic_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    gpt_obj = await GptTopic.get_or_none(id=gpt_topic_id, deleted_at__isnull=True)
+    if gpt_obj is None:
+        raise HTTPException(
+            status_code=404, detail='Not found')
+    await gpt_obj.soft_delete()
+
+
+# 修改一个GptTopic
+@router.put(
+    '/gpt_topic/{gpt_topic_id}',
+    response_model=GptTopicOut,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def update_gpt_topic(
+        gpt_topic_id: str,
+        gpt_topic_input: GptTopicIn,
+        user: Auth0User = Security(auth.get_user)
+):
+    gpt_obj = await GptTopic.get_or_none(id=gpt_topic_id, deleted_at__isnull=True)
+    if gpt_obj is None:
+        raise HTTPException(
+            status_code=404, detail='Not found')
+    await gpt_obj.update_from_dict(gpt_topic_input.dict(exclude_unset=True)).save()
+    return await GptTopicOut.from_tortoise_orm(gpt_obj)

@@ -28,3 +28,9 @@ class GptModel(str, Enum):
 class GptKeySource(str, Enum):
     SYSTEM = 'system'
     ORG = 'org'
+
+
+class Belong(str, Enum):
+    ORG = 'org'
+    OWN = 'own'
+    PUBLIC = 'public'
