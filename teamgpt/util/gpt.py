@@ -6,12 +6,11 @@ import openai
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
     try:
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=message_log,
-            stream=True
-        )
-        for chunk_msg in response:
+        async for chunk_msg in await openai.ChatCompletion.create(
+                model=model,
+                messages=message_log,
+                stream=True
+        ):
             if 'content' in chunk_msg['choices'][0]['delta']:
                 message = chunk_msg['choices'][0]['delta']['content']
             else:

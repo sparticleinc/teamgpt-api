@@ -1,7 +1,9 @@
+import asyncio
 import json
 import time
 import uuid
 
+import openai
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
 from fastapi_pagination import Page
 from sse_starlette import EventSourceResponse
@@ -17,6 +19,24 @@ from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.util.gpt import ask
 
 router = APIRouter(prefix='/conversations', tags=['Conversations'])
+
+
+@router.get("/message/test/{key}")
+async def test(key: str):
+    async def event_generator():
+        openai.api_key = key
+        async for chunk_msg in await openai.ChatCompletion.acreate(
+                model='gpt-3.5-turbo',
+                messages=[{"role": "user", "content": "hello"}, {"role": "system", "content": "You're a chat robot"}],
+                stream=True
+        ):
+            if 'content' in chunk_msg['choices'][0]['delta']:
+                message = chunk_msg['choices'][0]['delta']['content']
+            else:
+                message = ''
+            yield {'data': json.dumps({'message': message})}
+
+    return EventSourceResponse(event_generator())
 
 
 # create conversations
@@ -127,13 +147,21 @@ async def create_conversations_message(
 
     # 循环消息插入数据库
     for conversations_input in conversations_input_list:
-        await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
-                                          conversation_id=conversation_id,
-                                          message=conversations_input.message,
-                                          author_user=conversations_input.author_user,
-                                          content_type=conversations_input.content_type,
-                                          key=key,
-                                          )
+        if conversations_input.id is None:
+            await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
+                                              message=conversations_input.message,
+                                              author_user=conversations_input.author_user,
+                                              content_type=conversations_input.content_type,
+                                              key=key,
+                                              )
+        else:
+            await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
+                                              conversation_id=conversation_id,
+                                              message=conversations_input.message,
+                                              author_user=conversations_input.author_user,
+                                              content_type=conversations_input.content_type,
+                                              key=key,
+                                              )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversation_id,
                                                 deleted_at__isnull=True).order_by('-created_at').limit(context_number)
