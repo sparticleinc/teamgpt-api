@@ -6,7 +6,7 @@ import openai
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
     try:
-        async for chunk_msg in await openai.ChatCompletion.create(
+        async for chunk_msg in await openai.ChatCompletion.acreate(
                 model=model,
                 messages=message_log,
                 stream=True
