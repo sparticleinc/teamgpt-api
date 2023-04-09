@@ -1,11 +1,12 @@
 import nest_asyncio
+import openai
 from starlette import status
 from starlette.responses import JSONResponse
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from teamgpt.endpoints import router
-from teamgpt.settings import TORTOISE_ORM
+from teamgpt.settings import TORTOISE_ORM, GPT_PROXY_URL
 from fastapi.openapi.docs import (get_swagger_ui_html,
                                   get_swagger_ui_oauth2_redirect_html)
 from fastapi import FastAPI, Request
@@ -30,6 +31,9 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+if GPT_PROXY_URL:
+    openai.proxy = GPT_PROXY_URL
 
 
 async def general_exception_handler(request, err):

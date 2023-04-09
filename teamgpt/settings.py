@@ -81,6 +81,9 @@ LOGOUT_URL = f'https://{AUTH0_DOMAIN}/v2/logout?client_id={AUTH0_CLIENT_ID}&retu
 GPT_KEY = os.getenv(
     'GPT_KEY', '')
 
+GPT_PROXY_URL = os.getenv(
+    'GPT_PROXY_URL', '')
+
 # TortoiseORM settings
 TORTOISE_ORM = {
     'connections': {
