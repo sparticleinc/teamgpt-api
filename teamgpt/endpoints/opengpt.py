@@ -9,7 +9,7 @@ from sse_starlette import EventSourceResponse
 from teamgpt.models import OpenGptKey, OpenGptChatMessage
 from teamgpt.schemata import OpenGptKeyIn, OpenGptKeyOut, OpenGptChatMessageIn, OpenGptChatMessageOut
 from teamgpt.settings import auth
-from teamgpt.util.gpt import ask
+from teamgpt.util.gpt import ask, ask_open
 
 router = APIRouter(prefix='/open', tags=['Open'])
 
@@ -49,12 +49,12 @@ async def create_open_gpt_chat_message(
         message_log = []
         new_msg_obj_id = new_obj.id
         for con in chat_message_input.messages:
-            message_log.append({'role': con['author_user'], 'content': con['message']})
-        agen = ask(key_info.gpt_key, message_log, chat_message_input.model, new_obj.id)
+            message_log.append({'role': con['role'], 'content': con['content']})
+        agen = ask_open(key_info.gpt_key, message_log, chat_message_input.model, new_obj.id)
         async for event in agen:
             event_data = json.loads(event['data'])
             if event_data['sta'] == 'run':
-                message = message + event_data['message']
+                message = message + event_data['content']
                 event['data'] = json.dumps(event_data)
                 yield event
             else:
