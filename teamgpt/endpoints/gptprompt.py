@@ -21,9 +21,11 @@ router = APIRouter(prefix='/gpt_prompt', tags=['GptPrompt'])
 )
 async def create_gpt_topic(
         gpt_topic_input: GptTopicIn,
+        organization_id: Optional[str] = None,
         user: Auth0User = Security(auth.get_user)
 ):
-    new_gpt_topic_obj = await GptTopic.create(**gpt_topic_input.dict(exclude_unset=True))
+    new_gpt_topic_obj = await GptTopic.create(title=gpt_topic_input.title, description=gpt_topic_input.description,
+                                              pid=gpt_topic_input.pid, organization_id=organization_id)
     return await GptTopicOut.from_tortoise_orm(new_gpt_topic_obj)
 
 
@@ -36,9 +38,12 @@ async def create_gpt_topic(
 async def get_gpt_topics(
         user: Auth0User = Security(auth.get_user),
         pid: Optional[str] = None,
+        organization_id: Optional[str] = None,
         params: ListAPIParams = Depends()
 ):
     query_params = {'deleted_at__isnull': True}
+    if organization_id is not None:
+        query_params['organization_id'] = organization_id
     if pid is not None:
         query_params['pid'] = pid
     else:

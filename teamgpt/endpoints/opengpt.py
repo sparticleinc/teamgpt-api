@@ -7,9 +7,9 @@ from fastapi_auth0 import Auth0User
 from sse_starlette import EventSourceResponse
 
 from teamgpt.models import OpenGptKey, OpenGptChatMessage
-from teamgpt.schemata import OpenGptKeyIn, OpenGptKeyOut, OpenGptChatMessageIn, OpenGptChatMessageOut
+from teamgpt.schemata import OpenGptKeyIn, OpenGptKeyOut, OpenGptChatMessageIn
 from teamgpt.settings import auth
-from teamgpt.util.gpt import ask, ask_open
+from teamgpt.util.gpt import ask_open
 
 router = APIRouter(prefix='/open', tags=['Open'])
 
