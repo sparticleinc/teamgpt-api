@@ -222,6 +222,7 @@ OpenGptChatMessageIn = pydantic_model_creator(
         'updated_at',
         'req_message',
         'token',
+        'run_time'
     ),
 )
 
