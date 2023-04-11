@@ -227,3 +227,63 @@ class GptPrompt(AbstractBaseModelWithDeletedAt):
             'updated_at',
             'deleted_at',
         )
+
+
+class OpenGptKey(AbstractBaseModelWithDeletedAt):
+    key = fields.CharField(max_length=255)
+    gpt_key = fields.CharField(max_length=255)
+    name = fields.CharField(max_length=255, null=True)
+
+    open_gpt_key_conversations: fields.ReverseRelation['OpenGptConversations']
+    open_gpt_key_messages: fields.ReverseRelation['OpenGptConversationsMessage']
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class OpenGptConversations(AbstractBaseModelWithDeletedAt):
+    title = fields.CharField(max_length=255)
+    model = fields.CharEnumField(GptModel, max_length=100, null=True)
+
+    open_gpt_key = fields.ForeignKeyField(
+        'models.OpenGptKey', related_name='open_gpt_key_conversations')
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class OpenGptConversationsMessage(AbstractBaseModelWithDeletedAt):
+    message = fields.TextField(null=True)
+    content_type = fields.CharEnumField(ContentType, max_length=100, null=True)
+    author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
+    run_time = fields.IntField(null=True)
+
+    open_gpt_key = fields.ForeignKeyField(
+        'models.OpenGptKey', related_name='open_gpt_key_messages')
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class OpenGptChatMessage(AbstractBaseModelWithDeletedAt):
+    open_gpt_key = fields.ForeignKeyField('models.OpenGptKey', related_name='open_gpt_key_chat_messages')
+    model = fields.CharEnumField(GptModel, max_length=100, null=True)
+    messages = fields.JSONField(null=True)
+    req_message = fields.TextField(null=True)
+    token = fields.IntField(null=True)
+    run_time = fields.IntField(null=True)
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )

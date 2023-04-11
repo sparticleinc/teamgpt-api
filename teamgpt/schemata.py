@@ -182,3 +182,50 @@ GptTopicOut = pydantic_model_creator(
     models.GptTopic,
     name='GptTopicOut',
 )
+
+OpenGptKeyIn = pydantic_model_creator(
+    models.OpenGptKey,
+    name='OpenGptKeyIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+        'key'
+    ),
+)
+OpenGptKeyOut = pydantic_model_creator(
+    models.OpenGptKey,
+    name='OpenGptKeyOut',
+)
+
+OpenGptConversationsIn = pydantic_model_creator(
+    models.OpenGptConversations,
+    name='OpenGptConversationsIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+OpenGptConversationsOut = pydantic_model_creator(
+    models.OpenGptConversations,
+    name='OpenGptConversationsOut',
+)
+
+OpenGptChatMessageIn = pydantic_model_creator(
+    models.OpenGptChatMessage,
+    name='OpenGptChatMessageIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+        'req_message',
+        'token',
+    ),
+)
+
+OpenGptChatMessageOut = pydantic_model_creator(
+    models.OpenGptChatMessage,
+    name='OpenGptChatMessageOut',
+)
