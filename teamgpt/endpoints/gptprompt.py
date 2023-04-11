@@ -91,9 +91,18 @@ async def update_gpt_topic(
 )
 async def create_gpt_prompt(
         gpt_prompt_input: GptPromptIn,
+        organization_id: Optional[str] = None,
+        gpt_topic_id: Optional[str] = None,
         user: Auth0User = Security(auth.get_user)
 ):
-    new_gpt_prompt_obj = await GptPrompt.create(**gpt_prompt_input.dict(exclude_unset=True))
+    new_gpt_prompt_obj = await GptPrompt.create(belong=gpt_prompt_input.belong,
+                                                prompt_template=gpt_prompt_input.prompt_template,
+                                                prompt_hint=gpt_prompt_input.prompt_hint,
+                                                teaser=gpt_prompt_input.teaser,
+                                                title=gpt_prompt_input.title,
+                                                organization_id=organization_id,
+                                                gpt_topic_id=gpt_topic_id,
+                                                )
     return await GptPromptOut.from_tortoise_orm(new_gpt_prompt_obj)
 
 
@@ -132,4 +141,26 @@ async def update_gpt_prompt(
     await gpt_obj.update_from_dict(gpt_prompt_input.dict(exclude_unset=True)).save()
     return await GptPromptOut.from_tortoise_orm(gpt_obj)
 
-# 查询
+
+# 查询GptPrompt
+@router.get(
+    '/',
+    response_model=Page[GptPromptOut],
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def get_gpt_prompts(
+        user: Auth0User = Security(auth.get_user),
+        organization_id: Optional[str] = None,
+        gpt_topic_id: Optional[str] = None,
+        belong: Optional[str] = None,
+        params: ListAPIParams = Depends()
+):
+    query_params = {'deleted_at__isnull': True}
+    if organization_id is not None:
+        query_params['organization_id'] = organization_id
+    if gpt_topic_id is not None:
+        query_params['gpt_topic_id'] = gpt_topic_id
+    if belong is not None:
+        query_params['belong'] = belong
+    gpt_prompts = GptPrompt.filter(**query_params)
+    return await tortoise_paginate(gpt_prompts, params)
