@@ -5,7 +5,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from teamgpt.models import GptTopic, GptPrompt
 from teamgpt.parameters import Page, tortoise_paginate, ListAPIParams
-from teamgpt.schemata import GptTopicOut, GptTopicIn, GptPromptIn, GptPromptOut
+from teamgpt.schemata import GptTopicOut, GptTopicIn, GptPromptIn, GptPromptOut, GptPromptToOut
 
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
@@ -150,7 +150,7 @@ async def update_gpt_prompt(
 # 查询GptPrompt
 @router.get(
     '/',
-    response_model=Page[GptPromptOut],
+    response_model=Page[GptPromptToOut],
     dependencies=[Depends(auth.implicit_scheme)]
 )
 async def get_gpt_prompts(

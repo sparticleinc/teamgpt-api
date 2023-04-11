@@ -230,3 +230,16 @@ OpenGptChatMessageOut = pydantic_model_creator(
     models.OpenGptChatMessage,
     name='OpenGptChatMessageOut',
 )
+
+
+class GptPromptToOut(BaseModel):
+    belong: str
+    prompt_template: str
+    prompt_hint: str
+    teaser: str
+    title: str
+    id: uuid.UUID
+    gpt_topic_id: uuid.UUID
+
+    class Config:
+        orm_mode = True
