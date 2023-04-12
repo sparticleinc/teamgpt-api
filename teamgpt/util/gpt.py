@@ -1,6 +1,7 @@
 import json
 
 import openai
+import tiktoken
 
 from teamgpt.models import OpenGptChatMessage
 from teamgpt.schemata import OpenGptChatMessageIn
@@ -62,3 +63,10 @@ async def ask_open_v2(api_key: str, chat_message_input: OpenGptChatMessage):
         **chat_message_input.dict(exclude_unset=True)
     )
     return ret
+
+
+async def num_tokens_from_string(string: str, encoding_name: str) -> int:
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens

@@ -17,24 +17,6 @@ app = FastAPI(
     openapi_url='/api/openapi.json',
 )
 
-app.include_router(router)
-register_tortoise(
-    app,
-    config=TORTOISE_ORM,
-    generate_schemas=False,
-)
-origins = ['*']
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
-)
-
-if GPT_PROXY_URL:
-    openai.proxy = GPT_PROXY_URL
-
 
 async def general_exception_handler(request, err):
     base_error_message = f'Failed to execute: {request.method}: {request.url}'
@@ -44,10 +26,29 @@ async def general_exception_handler(request, err):
     }, status_code=status.HTTP_400_BAD_REQUEST)
 
 
+origins = ['*']
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+
 app.add_middleware(
     ServerErrorMiddleware,
     handler=general_exception_handler,
 )
+
+app.include_router(router)
+register_tortoise(
+    app,
+    config=TORTOISE_ORM,
+    generate_schemas=False,
+)
+
+if GPT_PROXY_URL:
+    openai.proxy = GPT_PROXY_URL
 
 
 @app.get('/api/docs-swagger', include_in_schema=False)
