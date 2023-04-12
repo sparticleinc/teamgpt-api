@@ -15,7 +15,7 @@ router = APIRouter(prefix='/sys_gpt_key', tags=['SysGptKey'])
 
 # create sys_gpt_key
 @router.post(
-    '/',
+    '',
     response_model=SysGPTKeyOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )
@@ -33,7 +33,7 @@ async def create_sys_gpt_key(
 
 # get sys_gpt_key
 @router.get(
-    '/',
+    '',
     response_model=Page[SysGPTKeyOut],
     dependencies=[Depends(auth.implicit_scheme)]
 )

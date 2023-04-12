@@ -90,7 +90,7 @@ async def update_gpt_topic(
 
 # 新增一个GptPrompt
 @router.post(
-    '/',
+    '',
     response_model=GptPromptOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )
@@ -149,7 +149,7 @@ async def update_gpt_prompt(
 
 # 查询GptPrompt
 @router.get(
-    '/',
+    '',
     response_model=Page[GptPromptToOut],
     dependencies=[Depends(auth.implicit_scheme)]
 )
