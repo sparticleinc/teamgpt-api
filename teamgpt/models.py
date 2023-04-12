@@ -287,8 +287,10 @@ class OpenGptChatMessage(AbstractBaseModelWithDeletedAt):
     frequency_penalty = fields.IntField(null=True)
     messages = fields.JSONField(null=True)
     req_message = fields.TextField(null=True)
-    token = fields.IntField(null=True)
     run_time = fields.IntField(null=True)
+    prompt_tokens = fields.IntField(null=True)
+    completion_tokens = fields.IntField(null=True)
+    total_tokens = fields.IntField(null=True)
 
     class PydanticMeta:
         exclude = (

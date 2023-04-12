@@ -89,6 +89,9 @@ async def create_open_gpt_chat_message(
             message_log.append({'role': con['role'], 'content': con['content']})
         agen = await ask_open_v2(key_info.gpt_key, chat_message_input)
         await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=agen,
+                                                                  prompt_tokens=agen.usage['prompt_tokens'],
+                                                                  completion_tokens=agen.usage['completion_tokens'],
+                                                                  total_tokens=agen.usage['total_tokens']
                                                                   )
         return agen
     else:
