@@ -9,7 +9,7 @@ from sse_starlette import EventSourceResponse
 from teamgpt.models import OpenGptKey, OpenGptChatMessage
 from teamgpt.schemata import OpenGptKeyIn, OpenGptKeyOut, OpenGptChatMessageIn
 from teamgpt.settings import auth
-from teamgpt.util.gpt import ask_open
+from teamgpt.util.gpt import ask_open, ask_open_v2
 
 router = APIRouter(prefix='/open', tags=['Open'])
 
@@ -25,6 +25,48 @@ def verify_token(req: Request):
 
 
 # 创建一个聊天记录
+# @router.post('/chat_message')
+# async def create_open_gpt_chat_message(
+#         chat_message_input: OpenGptChatMessageIn,
+#         open_gpt_key: str = Depends(verify_token),
+# ):
+#     # 验证key
+#     key_info = await OpenGptKey.get_or_none(key=open_gpt_key, deleted_at__isnull=True)
+#     if key_info is None:
+#         raise HTTPException(
+#             status_code=401,
+#             detail="Unauthorized"
+#         )
+#
+#     new_obj = await OpenGptChatMessage.create(open_gpt_key_id=key_info.id, model=chat_message_input.model,
+#                                               messages=chat_message_input.messages)
+#
+#     # 发送sse请求数据
+#     start_time = int(time.time())
+#
+#     async def send_gpt():
+#         message = ''
+#         message_log = []
+#         new_msg_obj_id = new_obj.id
+#         for con in chat_message_input.messages:
+#             message_log.append({'role': con['role'], 'content': con['content']})
+#         agen = ask_open(key_info.gpt_key, message_log, chat_message_input.model, new_obj.id)
+#         async for event in agen:
+#             event_data = json.loads(event['data'])
+#             if event_data['sta'] == 'run':
+#                 message = message + event_data['content']
+#                 event['data'] = json.dumps(event_data)
+#                 yield event
+#             else:
+#                 end_time = int(time.time())
+#                 await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=message,
+#                                                                           run_time=end_time - start_time)
+#                 yield event
+#                 await agen.aclose()
+#
+#     return EventSourceResponse(send_gpt())
+
+
 @router.post('/chat_message')
 async def create_open_gpt_chat_message(
         chat_message_input: OpenGptChatMessageIn,
@@ -41,30 +83,14 @@ async def create_open_gpt_chat_message(
     new_obj = await OpenGptChatMessage.create(open_gpt_key_id=key_info.id, model=chat_message_input.model,
                                               messages=chat_message_input.messages)
 
-    # 发送sse请求数据
-    start_time = int(time.time())
-
-    async def send_gpt():
-        message = ''
-        message_log = []
-        new_msg_obj_id = new_obj.id
-        for con in chat_message_input.messages:
-            message_log.append({'role': con['role'], 'content': con['content']})
-        agen = ask_open(key_info.gpt_key, message_log, chat_message_input.model, new_obj.id)
-        async for event in agen:
-            event_data = json.loads(event['data'])
-            if event_data['sta'] == 'run':
-                message = message + event_data['content']
-                event['data'] = json.dumps(event_data)
-                yield event
-            else:
-                end_time = int(time.time())
-                await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=message,
-                                                                          run_time=end_time - start_time)
-                yield event
-                await agen.aclose()
-
-    return EventSourceResponse(send_gpt())
+    message_log = []
+    new_msg_obj_id = new_obj.id
+    for con in chat_message_input.messages:
+        message_log.append({'role': con['role'], 'content': con['content']})
+    agen = await ask_open_v2(key_info.gpt_key, message_log, chat_message_input.model, new_obj.id)
+    await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=agen,
+                                                              )
+    return agen
 
 
 # 创建open gpt key

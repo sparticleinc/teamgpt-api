@@ -51,3 +51,13 @@ async def ask_open(api_key: str, message_log: list, model: str, conversations_id
         yield {
             "data": json.dumps({'error': str(e), 'sta': 'error'}),
         }
+
+
+async def ask_open_v2(api_key: str, message_log: list, model: str, conversations_id: str):
+    openai.api_key = api_key
+    ret = await openai.ChatCompletion.acreate(
+        model=model,
+        messages=message_log,
+        stream=False
+    )
+    return ret
