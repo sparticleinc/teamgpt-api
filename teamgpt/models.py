@@ -145,6 +145,9 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     author_user = fields.CharEnumField(AutherUser, max_length=100, null=True)
     run_time = fields.IntField(null=True)
     key = fields.CharField(max_length=255, null=True)
+    prompt_tokens = fields.IntField(null=True)
+    completion_tokens = fields.IntField(null=True)
+    total_tokens = fields.IntField(null=True)
 
     class PydanticMeta:
         exclude = (
@@ -181,6 +184,9 @@ class GptChatMessage(AbstractBaseModelWithDeletedAt):
         'models.Organization', related_name='organization_gpt_chat_messages')
     user = fields.ForeignKeyField(
         'models.User', related_name='user_gpt_chat_messages')
+    prompt_tokens = fields.IntField(null=True)
+    completion_tokens = fields.IntField(null=True)
+    total_tokens = fields.IntField(null=True)
 
     class PydanticMeta:
         exclude = (

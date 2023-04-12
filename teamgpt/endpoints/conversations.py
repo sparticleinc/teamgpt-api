@@ -15,7 +15,7 @@ from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMes
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
-from teamgpt.util.gpt import ask
+from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num
 
 router = APIRouter(prefix='/conversations', tags=['Conversations'])
 
@@ -110,7 +110,6 @@ async def create_conversations_message(
         context_number: Union[int, None] = Query(default=5),
         user: Auth0User = Security(auth.get_user)
 ):
-    log_start_time = int(time.time())
     # 查询gpt-key配置信息,判断是否是系统的
     key = ''
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
@@ -166,15 +165,14 @@ async def create_conversations_message(
                                                 deleted_at__isnull=True).order_by('-created_at').limit(context_number)
     for con in con_org:
         message_log.append({'role': con.author_user, 'content': con.message})
-    log_end_time = int(time.time())
-    log_run_time = log_end_time - log_start_time
-    print(log_run_time, "log_run_time")
     # 发送sse请求数据
     start_time = int(time.time())
 
     async def send_gpt():
         message = ''
         new_msg_obj_id = ''
+        prompt_tokens = await num_tokens_from_messages(message_log[::-1], model=model)
+
         agen = ask(key, message_log[::-1], model, conversation_id)
         async for event in agen:
             event_data = json.loads(event['data'])
@@ -186,6 +184,7 @@ async def create_conversations_message(
                                                                     author_user=AutherUser.ASSISTANT,
                                                                     content_type=ContentType.TEXT,
                                                                     key=key,
+                                                                    prompt_tokens=prompt_tokens
                                                                     )
                     new_msg_obj_id = str(new_msg_obj.id)
                 event_data['msg_id'] = new_msg_obj_id
@@ -193,8 +192,14 @@ async def create_conversations_message(
                 yield event
             else:
                 end_time = int(time.time())
+                req_token_num = await msg_tiktoken_num(message, model=model)
+                total_tokens = prompt_tokens + req_token_num
+
                 await ConversationsMessage.filter(id=new_msg_obj_id).update(message=message,
-                                                                            run_time=end_time - start_time)
+                                                                            run_time=end_time - start_time,
+                                                                            completion_tokens=req_token_num,
+                                                                            total_tokens=total_tokens,
+                                                                            )
                 await GptChatMessage.create(in_message=json.dumps(message_log, ensure_ascii=False), out_message=message,
                                             key=key,
                                             user=user_info,
