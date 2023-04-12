@@ -164,8 +164,15 @@ async def get_gpt_prompts(
     if organization_id is not None:
         query_params['organization_id'] = organization_id
     if gpt_topic_id is not None:
-        query_params['gpt_topic_id'] = gpt_topic_id
+        gpt_topic_info = await GptTopic.get_or_none(id=gpt_topic_id, deleted_at__isnull=True)
+        if gpt_topic_info.pid is not None:
+            query_params['gpt_topic_id'] = gpt_topic_id
+        else:
+            gpt_topic_pid_list = await GptTopic.filter(pid=gpt_topic_id, deleted_at__isnull=True).values_list('id',
+                                                                                                              flat=True)
+            query_params['gpt_topic_id__in'] = gpt_topic_pid_list
+
     if belong is not None:
         query_params['belong'] = belong
     gpt_prompts = GptPrompt.filter(**query_params)
-    return await tortoise_paginate(gpt_prompts, params)
+    return await tortoise_paginate(gpt_prompts, params, ['user'])

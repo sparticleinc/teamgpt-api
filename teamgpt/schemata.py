@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from tortoise.contrib.pydantic import pydantic_model_creator
 from teamgpt import models
@@ -233,13 +234,14 @@ OpenGptChatMessageOut = pydantic_model_creator(
 
 
 class GptPromptToOut(BaseModel):
-    belong: str
+    belong: Optional[str] = None
     prompt_template: str
-    prompt_hint: str
+    prompt_hint: Optional[str] = None
     teaser: str
     title: str
     id: uuid.UUID
     gpt_topic_id: uuid.UUID
+    user: Optional[UserOut] = None
 
     class Config:
         orm_mode = True
