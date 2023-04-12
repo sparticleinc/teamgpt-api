@@ -82,15 +82,40 @@ async def create_open_gpt_chat_message(
 
     new_obj = await OpenGptChatMessage.create(open_gpt_key_id=key_info.id, model=chat_message_input.model,
                                               messages=chat_message_input.messages)
+    if chat_message_input.stream is None or chat_message_input.stream is False:
+        message_log = []
+        new_msg_obj_id = new_obj.id
+        for con in chat_message_input.messages:
+            message_log.append({'role': con['role'], 'content': con['content']})
+        agen = await ask_open_v2(key_info.gpt_key, chat_message_input)
+        await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=agen,
+                                                                  )
+        return agen
+    else:
+        # 发送sse请求数据
+        start_time = int(time.time())
 
-    message_log = []
-    new_msg_obj_id = new_obj.id
-    for con in chat_message_input.messages:
-        message_log.append({'role': con['role'], 'content': con['content']})
-    agen = await ask_open_v2(key_info.gpt_key, message_log, chat_message_input.model, new_obj.id)
-    await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=agen,
-                                                              )
-    return agen
+        async def send_gpt():
+            message = ''
+            message_log = []
+            new_msg_obj_id = new_obj.id
+            for con in chat_message_input.messages:
+                message_log.append({'role': con['role'], 'content': con['content']})
+            agen = ask_open(key_info.gpt_key, message_log, chat_message_input.model, new_obj.id)
+            async for event in agen:
+                event_data = json.loads(event['data'])
+                if event_data['sta'] == 'run':
+                    message = message + event_data['content']
+                    event['data'] = json.dumps(event_data)
+                    yield event
+                else:
+                    end_time = int(time.time())
+                    await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=message,
+                                                                              run_time=end_time - start_time)
+                    yield event
+                    await agen.aclose()
+
+        return EventSourceResponse(send_gpt())
 
 
 # 创建open gpt key

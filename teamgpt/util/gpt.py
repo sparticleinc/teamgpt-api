@@ -2,6 +2,9 @@ import json
 
 import openai
 
+from teamgpt.models import OpenGptChatMessage
+from teamgpt.schemata import OpenGptChatMessageIn
+
 
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
@@ -53,11 +56,9 @@ async def ask_open(api_key: str, message_log: list, model: str, conversations_id
         }
 
 
-async def ask_open_v2(api_key: str, message_log: list, model: str, conversations_id: str):
+async def ask_open_v2(api_key: str, chat_message_input: OpenGptChatMessage):
     openai.api_key = api_key
     ret = await openai.ChatCompletion.acreate(
-        model=model,
-        messages=message_log,
-        stream=False
+        **chat_message_input.dict(exclude_unset=True)
     )
     return ret
