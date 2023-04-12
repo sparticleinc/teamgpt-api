@@ -124,7 +124,7 @@ async def create_open_gpt_chat_message(
 # 创建open gpt key
 @router.post('/gpt_key', response_model=OpenGptKeyOut, )
 async def create_open_gpt_key(
-        gpt_key_input: OpenGptKeyIn, user: Auth0User = Security(auth.get_user)):
+        gpt_key_input: OpenGptKeyIn):
     # 创建一个sk秘钥
     sk = uuid.uuid4().hex
     new_obj = await OpenGptKey.create(key=sk, gpt_key=gpt_key_input.gpt_key, name=gpt_key_input.name)
