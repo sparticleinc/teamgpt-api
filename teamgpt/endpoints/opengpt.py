@@ -7,7 +7,7 @@ from sse_starlette import EventSourceResponse
 
 from teamgpt.models import OpenGptKey, OpenGptChatMessage
 from teamgpt.schemata import OpenGptKeyIn, OpenGptKeyOut, OpenGptChatMessageIn
-from teamgpt.util.gpt import ask_open, ask_open_v2
+from teamgpt.util.gpt import ask_open, ask_open_v2, num_tokens_from_messages, msg_tiktoken_num
 
 router = APIRouter(prefix='/v1', tags=['V1'])
 
@@ -54,31 +54,32 @@ async def create_open_gpt_chat_message(
         start_time = int(time.time())
 
         async def send_gpt():
-            # message = ''
+            message = ''
             message_log = []
-            # new_msg_obj_id = new_obj.id
+            new_msg_obj_id = new_obj.id
             for con in chat_message_input.messages:
                 message_log.append({'role': con['role'], 'content': con['content']})
             agen = ask_open(key_info.gpt_key, message_log, chat_message_input.model)
             async for event in agen:
                 event_data = event['data']
                 loads_json = json.loads(event_data)
+                if 'content' in loads_json['choices'][0]['delta']:
+                    message = message + loads_json['choices'][0]['delta']['content']
                 yield event
                 if loads_json['choices'][0]['finish_reason'] == 'stop':
                     yield {
                         'data': '[DONE]'
                     }
+                    end_time = int(time.time())
+                    prompt_tokens = await num_tokens_from_messages(message_log[::-1], model=chat_message_input.model)
+                    req_token_num = await msg_tiktoken_num(message, model=chat_message_input.model)
+                    total_tokens = prompt_tokens + req_token_num
+                    await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=message,
+                                                                              completion_tokens=req_token_num,
+                                                                              prompt_tokens=prompt_tokens,
+                                                                              total_tokens=total_tokens,
+                                                                              run_time=end_time - start_time)
                     await agen.aclose()
-            #     if event_data['sta'] == 'run':
-            #         message = message + event_data['content']
-            #         event['data'] = json.dumps(event_data)
-            #         yield event
-            #     else:
-            #         end_time = int(time.time())
-            #         await OpenGptChatMessage.filter(id=new_msg_obj_id).update(req_message=message,
-            #                                                                   run_time=end_time - start_time)
-            #         yield event
-            #         await agen.aclose()
 
         return EventSourceResponse(send_gpt(), headers={'content-type': 'text/event-stream', 'charset': 'utf-8'})
 
