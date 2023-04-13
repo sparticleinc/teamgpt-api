@@ -69,7 +69,6 @@ async def create_open_gpt_chat_message(
                         'data': '[DONE]'
                     }
                     await agen.aclose()
-            #
             #     if event_data['sta'] == 'run':
             #         message = message + event_data['content']
             #         event['data'] = json.dumps(event_data)
