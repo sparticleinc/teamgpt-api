@@ -17,7 +17,7 @@ from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num
 
-router = APIRouter(prefix='/conversations', tags=['Conversations'])
+router = APIRouter(prefix='/api/v1/conversations', tags=['Conversations'])
 
 
 @router.get("/message/test/{key}")

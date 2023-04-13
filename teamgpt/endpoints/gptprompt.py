@@ -10,7 +10,7 @@ from teamgpt.schemata import GptTopicOut, GptTopicIn, GptPromptIn, GptPromptOut,
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 
-router = APIRouter(prefix='/gpt_prompt', tags=['GptPrompt'])
+router = APIRouter(prefix='/api/v1/gpt_prompt', tags=['GptPrompt'])
 
 
 # 增加一个GptTopic

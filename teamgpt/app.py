@@ -41,6 +41,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
 register_tortoise(
     app,
     config=TORTOISE_ORM,

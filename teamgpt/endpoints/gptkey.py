@@ -7,7 +7,7 @@ from teamgpt.models import GPTKey, User, Organization
 from teamgpt.schemata import GPTKeyOut, GPTKeyIn
 from teamgpt.settings import (auth)
 
-router = APIRouter(prefix='/gpt_key', tags=['GptKey'])
+router = APIRouter(prefix='/api/v1/gpt_key', tags=['GptKey'])
 
 
 @router.post(

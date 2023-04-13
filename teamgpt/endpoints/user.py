@@ -13,7 +13,7 @@ from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
                               AUTHORIZATION_URL, LOGOUT_URL, auth)
 from teamgpt.util.auth0 import get_user_info
 
-router = APIRouter(prefix='', tags=['Users'])
+router = APIRouter(prefix='/api/v1', tags=['Users'])
 
 
 @router.get('/login')

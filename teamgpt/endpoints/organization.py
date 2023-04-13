@@ -14,7 +14,7 @@ from fastapi_pagination.ext.tortoise import paginate as _tortoise_paginate
 
 from teamgpt.util import random_run
 
-router = APIRouter(prefix='/organization', tags=['Organization'])
+router = APIRouter(prefix='/api/v1/organization', tags=['Organization'])
 
 
 # 查询自己在哪些Organization

@@ -9,7 +9,7 @@ from teamgpt.parameters import Page, ListAPIParams, tortoise_paginate
 from teamgpt.schemata import AiCharacterIn, AiCharacterOut, AiCharacterToOut
 from teamgpt.settings import (auth)
 
-router = APIRouter(prefix='/ai_character', tags=['AiCharacter'])
+router = APIRouter(prefix='/api/v1/ai_character', tags=['AiCharacter'])
 
 
 # create ai_character

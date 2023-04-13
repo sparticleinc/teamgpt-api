@@ -39,20 +39,12 @@ async def ask_open(api_key: str, message_log: list, model: str):
                 messages=message_log,
                 stream=True
         ):
-            if 'content' in chunk_msg['choices'][0]['delta']:
-                message = chunk_msg['choices'][0]['delta']['content']
-            else:
-                message = ''
-            sta = 'run'
-            if chunk_msg['choices'][0]['finish_reason'] == 'stop':
-                sta = 'stop'
             yield {
-                "data": json.dumps(
-                    {'content': message, 'sta': sta}),
+                "data": json.dumps(chunk_msg),
             }
     except Exception as e:
         yield {
-            "data": json.dumps({'error': str(e), 'sta': 'error'}),
+            "data": json.dumps(e),
         }
 
 

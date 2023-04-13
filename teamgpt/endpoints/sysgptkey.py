@@ -10,7 +10,7 @@ from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import GPTKeyOut, GPTKeyIn, SysGPTKeyIn, SysGPTKeyOut
 from teamgpt.settings import (auth)
 
-router = APIRouter(prefix='/sys_gpt_key', tags=['SysGptKey'])
+router = APIRouter(prefix='/api/v1/sys_gpt_key', tags=['SysGptKey'])
 
 
 # create sys_gpt_key
