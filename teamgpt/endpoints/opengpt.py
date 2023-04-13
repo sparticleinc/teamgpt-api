@@ -80,7 +80,7 @@ async def create_open_gpt_chat_message(
             #         yield event
             #         await agen.aclose()
 
-        return EventSourceResponse(send_gpt())
+        return EventSourceResponse(send_gpt(), headers={'content-type': 'text/event-stream', 'charset': 'utf-8'})
 
 
 # 创建open gpt key
