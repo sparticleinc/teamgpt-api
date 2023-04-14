@@ -1,3 +1,4 @@
+import json
 import uuid
 from typing import Optional
 
@@ -234,7 +235,7 @@ OpenGptChatMessageOut = pydantic_model_creator(
 
 
 class GptPromptToOut(BaseModel):
-    belong: Optional[str] = None
+    belong: Optional[list] = None
     prompt_template: str
     prompt_hint: Optional[str] = None
     teaser: str

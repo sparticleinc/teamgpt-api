@@ -190,6 +190,8 @@ async def get_gpt_prompts(
             query_params['gpt_topic_id__in'] = gpt_topic_pid_list
 
     if belong is not None:
-        query_params['belong'] = belong
-    gpt_prompts = GptPrompt.filter(**query_params)
+        belong_list = belong.split(',')
+        gpt_prompts = GptPrompt.filter(**query_params).filter(belong__contains=belong_list)
+    else:
+        gpt_prompts = GptPrompt.filter(**query_params)
     return await tortoise_paginate(gpt_prompts, params, ['user'])

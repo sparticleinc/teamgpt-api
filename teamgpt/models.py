@@ -215,7 +215,7 @@ class GptTopic(AbstractBaseModelWithDeletedAt):
 
 
 class GptPrompt(AbstractBaseModelWithDeletedAt):
-    belong = fields.CharEnumField(Belong, max_length=100, null=True)
+    belong = fields.JSONField(null=True)
     prompt_template = fields.TextField(null=True)
     prompt_hint = fields.TextField(null=True)
     teaser = fields.TextField(null=True)
