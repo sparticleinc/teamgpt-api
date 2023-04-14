@@ -52,6 +52,23 @@ async def get_gpt_topics(
     return await tortoise_paginate(gpt_topics, params)
 
 
+# 查询所有gptTopic
+@router.get(
+    '/gpt_topic_all',
+    response_model=list[GptTopicOut],
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def get_gpt_topic_all(
+        user: Auth0User = Security(auth.get_user),
+        organization_id: Optional[str] = None,
+):
+    query_params = {'deleted_at__isnull': True}
+    if organization_id is not None:
+        query_params['organization_id'] = organization_id
+    gpt_topics = await GptTopic.filter(**query_params).all()
+    return gpt_topics
+
+
 # 删除一个GptTopic
 @router.delete(
     '/gpt_topic/{gpt_topic_id}',
