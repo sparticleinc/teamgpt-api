@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Security, HTTPException
 from starlette.status import HTTP_204_NO_CONTENT
 
-from teamgpt.models import GptTopic, GptPrompt
+from teamgpt.models import GptTopic, GptPrompt, User
 from teamgpt.parameters import Page, tortoise_paginate, ListAPIParams
 from teamgpt.schemata import GptTopicOut, GptTopicIn, GptPromptIn, GptPromptOut, GptPromptToOut
 
@@ -24,8 +24,9 @@ async def create_gpt_topic(
         organization_id: Optional[str] = None,
         user: Auth0User = Security(auth.get_user)
 ):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     new_gpt_topic_obj = await GptTopic.create(title=gpt_topic_input.title, description=gpt_topic_input.description,
-                                              pid=gpt_topic_input.pid, organization_id=organization_id)
+                                              pid=gpt_topic_input.pid, organization_id=organization_id, user=user_info)
     return await GptTopicOut.from_tortoise_orm(new_gpt_topic_obj)
 
 
@@ -117,6 +118,7 @@ async def create_gpt_prompt(
         gpt_topic_id: Optional[str] = None,
         user: Auth0User = Security(auth.get_user)
 ):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     new_gpt_prompt_obj = await GptPrompt.create(belong=gpt_prompt_input.belong,
                                                 prompt_template=gpt_prompt_input.prompt_template,
                                                 prompt_hint=gpt_prompt_input.prompt_hint,
@@ -124,6 +126,7 @@ async def create_gpt_prompt(
                                                 title=gpt_prompt_input.title,
                                                 organization_id=organization_id,
                                                 gpt_topic_id=gpt_topic_id,
+                                                user=user_info
                                                 )
     return await GptPromptOut.from_tortoise_orm(new_gpt_prompt_obj)
 
