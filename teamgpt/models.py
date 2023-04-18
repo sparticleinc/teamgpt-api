@@ -2,7 +2,7 @@ from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource, Belong
+from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource, Belong, PackageType
 
 
 class AbstractBaseModel(models.Model):
@@ -299,6 +299,24 @@ class OpenGptChatMessage(AbstractBaseModelWithDeletedAt):
     total_tokens = fields.IntField(null=True)
     logit_bias = fields.JSONField(null=True)
     user = fields.CharField(max_length=255, null=True)
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class PaidPackages(AbstractBaseModelWithDeletedAt):
+    team_max_number = fields.IntField(null=True)
+    token_num = fields.IntField(null=True)
+    package_type = fields.CharEnumField(PackageType, max_length=100, null=True)
+    openai_key = fields.BooleanField(null=True, default=False)
+
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_paid_packages')
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_paid_packages')
 
     class PydanticMeta:
         exclude = (
