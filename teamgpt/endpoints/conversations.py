@@ -151,6 +151,7 @@ async def create_conversations_message(
                                               author_user=conversations_input.author_user,
                                               content_type=conversations_input.content_type,
                                               key=key,
+                                              shown_message=conversations_input.shown_message
                                               )
         else:
             await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
@@ -158,6 +159,7 @@ async def create_conversations_message(
                                               message=conversations_input.message,
                                               author_user=conversations_input.author_user,
                                               content_type=conversations_input.content_type,
+                                              shown_message=conversations_input.shown_message,
                                               key=key,
                                               )
     # 查询前5条消息

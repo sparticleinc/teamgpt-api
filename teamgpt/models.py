@@ -137,6 +137,7 @@ class Conversations(AbstractBaseModelWithDeletedAt):
 
 class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     message = fields.TextField(null=True)
+    shown_message = fields.TextField(null=True)
     conversation = fields.ForeignKeyField(
         'models.Conversations', related_name='conversation_messages')
     user = fields.ForeignKeyField(
