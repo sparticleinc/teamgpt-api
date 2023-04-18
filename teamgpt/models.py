@@ -330,3 +330,4 @@ class PaidPackages(AbstractBaseModelWithDeletedAt):
 class StripeWebhookLog(AbstractBaseModelWithDeletedAt):
     type = fields.CharField(max_length=255, null=True)
     data = fields.JSONField(null=True)
+    run_sta = fields.CharField(max_length=255, null=True)
