@@ -1,4 +1,6 @@
 import os
+import secrets
+import string
 from urllib.parse import quote, urlencode
 from fastapi_auth0 import Auth0
 
@@ -83,6 +85,14 @@ GPT_KEY = os.getenv(
 
 GPT_PROXY_URL = os.getenv(
     'GPT_PROXY_URL', '')
+
+# stripe
+STRIPE_API_KEY = os.getenv(
+    'STRIPE_API_KEY', '')
+
+# domain
+DOMAIN = os.getenv(
+    'DOMAIN', '')
 
 # TortoiseORM settings
 TORTOISE_ORM = {

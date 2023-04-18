@@ -246,3 +246,8 @@ class GptPromptToOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class StripeCheckoutIn(BaseModel):
+    lookup_key: str
+    organization_id: str

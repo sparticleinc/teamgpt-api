@@ -313,14 +313,20 @@ class PaidPackages(AbstractBaseModelWithDeletedAt):
     token_num = fields.IntField(null=True)
     package_type = fields.CharEnumField(PackageType, max_length=100, null=True)
     openai_key = fields.BooleanField(null=True, default=False)
+    webhook_type = fields.CharField(max_length=255, null=True)
 
     organization = fields.ForeignKeyField(
-        'models.Organization', related_name='organization_paid_packages')
+        'models.Organization', related_name='organization_paid_packages', null=True)
     user = fields.ForeignKeyField(
-        'models.User', related_name='user_paid_packages')
+        'models.User', related_name='user_paid_packages', null=True)
 
     class PydanticMeta:
         exclude = (
             'updated_at',
             'deleted_at',
         )
+
+
+class StripeWebhookLog(AbstractBaseModelWithDeletedAt):
+    type = fields.CharField(max_length=255, null=True)
+    data = fields.JSONField(null=True)
