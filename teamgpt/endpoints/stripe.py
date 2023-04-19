@@ -6,7 +6,7 @@ from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
 from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts
-from teamgpt.schemata import StripeProductsOut
+from teamgpt.schemata import StripeProductsOut, StripePaymentsOut, StripePaymentsToOut
 from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
 
 router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
@@ -21,6 +21,19 @@ router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
 async def get_products(user: Auth0User = Security(auth.get_user)):
     obj_list = await StripeProducts.filter(deleted_at__isnull=True).all()
     return obj_list
+
+
+# 查询组织付费计划
+@router.get(
+    '/pay/{organization_id}',
+    dependencies=[Depends(auth.implicit_scheme)],
+    response_model=StripePaymentsToOut,
+)
+async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user)):
+    obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True,
+                                      type='payment_intent.succeeded').prefetch_related(
+        'stripe_products').get_or_none()
+    return obj
 
 
 @router.get(
