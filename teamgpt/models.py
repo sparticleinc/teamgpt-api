@@ -2,7 +2,7 @@ from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource, Belong, PackageType
+from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource, Belong
 
 
 class AbstractBaseModel(models.Model):
@@ -308,26 +308,26 @@ class OpenGptChatMessage(AbstractBaseModelWithDeletedAt):
         )
 
 
-class PaidPackages(AbstractBaseModelWithDeletedAt):
-    team_max_number = fields.IntField(null=True)
-    token_num = fields.IntField(null=True)
-    package_type = fields.CharEnumField(PackageType, max_length=100, null=True)
-    openai_key = fields.BooleanField(null=True, default=False)
-    webhook_type = fields.CharField(max_length=255, null=True)
-
-    organization = fields.ForeignKeyField(
-        'models.Organization', related_name='organization_paid_packages', null=True)
-    user = fields.ForeignKeyField(
-        'models.User', related_name='user_paid_packages', null=True)
-
-    class PydanticMeta:
-        exclude = (
-            'updated_at',
-            'deleted_at',
-        )
-
-
 class StripeWebhookLog(AbstractBaseModelWithDeletedAt):
     type = fields.CharField(max_length=255, null=True)
     data = fields.JSONField(null=True)
     run_sta = fields.CharField(max_length=255, null=True)
+
+
+class StripeProducts(AbstractBaseModelWithDeletedAt):
+    name = fields.CharField(max_length=255, null=True)
+    max_number = fields.IntField(null=True, default=0)
+    max_tokens = fields.IntField(null=True, default=0)
+    sys_token = fields.BooleanField(null=True, default=False)
+    api_id = fields.CharField(max_length=255, null=True)
+
+
+class StripePayments(AbstractBaseModelWithDeletedAt):
+    api_id = fields.CharField(max_length=255, null=True)
+    type = fields.CharField(max_length=255, null=True)
+    invoice = fields.CharField(max_length=255, null=True)
+    customer_details = fields.JSONField(null=True)
+    stripe_products = fields.ForeignKeyField('models.StripeProducts', related_name='stripe_products_stripe_payments',
+                                             null=True)
+    organization = fields.ForeignKeyField('models.Organization', related_name='organization_stripe_payments', null=True)
+    user = fields.ForeignKeyField('models.User', related_name='user_stripe_payments', null=True)
