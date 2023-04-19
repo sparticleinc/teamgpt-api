@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi_pagination import Page
 from teamgpt.enums import Role, GptKeySource
 from teamgpt.models import Organization, User, UserOrganization
-from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut
+from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut, UserOut
 from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
@@ -33,7 +33,7 @@ async def get_my_organizations(
             status_code=404, detail='User not found')
     page_list = await _tortoise_paginate(
         query=UserOrganization.filter(
-            user=user_info.id, organization__deleted_at__isnull=True),
+            user=user_info.id, deleted_at__isnull=True, organization__deleted_at__isnull=True),
         params=params,
         prefetch_related=['organization', 'user'],
     )
@@ -187,7 +187,43 @@ async def get_users_in_organization(
     return await tortoise_paginate(queryset, params, ['organization', 'user'])
 
 
+# 删除组织成员
+@router.delete(
+    '/{org_id}/user/{user_id}',
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def delete_organization_user(
+        org_id: str,
+        user_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    current_user = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
+    if not org_obj:
+        raise HTTPException(
+            status_code=404, detail='Organization id not found')
+    if org_obj.creator_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail='User not authorized to delete this organization member')
+
+    user_info = await User.get_or_none(user_id=user_id, deleted_at__isnull=True)
+    if not user_info:
+        raise HTTPException(
+            status_code=404, detail='User not found')
+
+    user_organization = await UserOrganization.get_or_none(organization_id=org_obj.id, user_id=user_info.id,
+                                                           deleted_at__isnull=True)
+    if not user_organization:
+        raise HTTPException(
+            status_code=404, detail='User not found in this organization')
+
+    await user_organization.soft_delete()
+
+    return await UserOut.from_tortoise_orm(user_info)
+
 # 邀请人加入Organization
+
+
 @router.post(
     '/{org_id}/invite',
     response_model=OrganizationOut,

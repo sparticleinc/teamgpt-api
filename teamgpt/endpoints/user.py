@@ -81,5 +81,6 @@ async def bind_user_organization(
     # 查询用户是否在这个组织中
     user_org = await UserOrganization.get_or_none(user_id=user_obj.id, organization_id=organization_id)
     if user_org is None:
-        raise HTTPException(status_code=404, detail="User not found in this organization")
+        raise HTTPException(
+            status_code=404, detail="User not found in this organization")
     await User.filter(id=user_obj.id).update(current_organization=organization_id)
