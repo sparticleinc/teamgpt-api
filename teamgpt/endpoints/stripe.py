@@ -16,9 +16,12 @@ router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
 )
 async def get_my_organizations(
         api_id: str,
-        organization_id: str
+        organization_id: str,
+        domain: str,
 ):
     try:
+        if domain == '':
+            domain = DOMAIN
         stripe.api_key = STRIPE_API_KEY
         checkout_session = stripe.checkout.Session.create(
             line_items=[
@@ -28,10 +31,11 @@ async def get_my_organizations(
                 },
             ],
             mode='subscription',
-            success_url=DOMAIN,
-            cancel_url=DOMAIN,
+            success_url=domain,
+            cancel_url=domain,
             metadata={
                 'organization_id': organization_id,
+                'domain': domain
             }
         )
         return RedirectResponse(url=checkout_session.url, status_code=303)
