@@ -21,7 +21,7 @@ async def get_my_organizations(
 ):
     try:
         if origin == '':
-            domain = DOMAIN
+            origin = DOMAIN
         stripe.api_key = STRIPE_API_KEY
         checkout_session = stripe.checkout.Session.create(
             line_items=[
