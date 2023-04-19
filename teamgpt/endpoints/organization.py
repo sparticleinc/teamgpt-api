@@ -33,7 +33,7 @@ async def get_my_organizations(
             status_code=404, detail='User not found')
     page_list = await _tortoise_paginate(
         query=UserOrganization.filter(
-            user=user_info.id, deleted_at__isnull=True),
+            user=user_info.id, organization__deleted_at__isnull=True),
         params=params,
         prefetch_related=['organization', 'user'],
     )
