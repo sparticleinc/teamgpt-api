@@ -233,6 +233,21 @@ OpenGptChatMessageOut = pydantic_model_creator(
     name='OpenGptChatMessageOut',
 )
 
+StripeProductsIn = pydantic_model_creator(
+    models.StripeProducts,
+    name='StripeProductsIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+StripeProductsOut = pydantic_model_creator(
+    models.StripeProducts,
+    name='StripeProductsOut',
+)
+
 
 class GptPromptToOut(BaseModel):
     belong: Optional[list] = None

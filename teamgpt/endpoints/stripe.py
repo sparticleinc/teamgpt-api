@@ -1,13 +1,26 @@
 import json
 
 import stripe
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Depends, Security
+from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
 from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts
-from teamgpt.settings import (STRIPE_API_KEY, DOMAIN)
+from teamgpt.schemata import StripeProductsOut
+from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
 
 router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
+
+
+# 查询StripeProducts
+@router.get(
+    '/products',
+    dependencies=[Depends(auth.implicit_scheme)],
+    response_model=list[StripeProductsOut],
+)
+async def get_products(user: Auth0User = Security(auth.get_user)):
+    obj_list = await StripeProducts.filter(deleted_at__isnull=True).all()
+    return obj_list
 
 
 @router.get(
