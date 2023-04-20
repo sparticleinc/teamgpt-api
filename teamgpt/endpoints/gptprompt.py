@@ -1,7 +1,9 @@
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Security, HTTPException
 from starlette.status import HTTP_204_NO_CONTENT
+from stripe.http_client import requests
 
 from teamgpt.models import GptTopic, GptPrompt, User
 from teamgpt.parameters import Page, tortoise_paginate, ListAPIParams
@@ -198,3 +200,20 @@ async def get_gpt_prompts(
     else:
         gpt_prompts = GptPrompt.filter(**query_params)
     return await tortoise_paginate(gpt_prompts, params, ['user'])
+
+
+@router.get("/test/")
+async def test(org_id: str, gpt_topic_id: str):
+    url = 'https://api.aiprm.com/api3/Prompts?Community=SEO-84c5d6a7b8e9f0c1&Limit=10&Offset=0&OwnerExternalID=user-Nq8Ozuosjlt0cbWcesw4FxAz&OwnerExternalSystemNo=1&SortModeNo=2&UserFootprint='
+    response = requests.get(url)
+    data_list = response.json()
+    for data in data_list:
+        await GptPrompt.create(
+            belong=['public'],
+            title=data['Title'],
+            prompt_hint=data['PromptHint'],
+            organization_id=org_id,
+            gpt_topic_id=gpt_topic_id,
+            teaser=data['Teaser'],
+            prompt_template=data['Prompt'],
+        )
