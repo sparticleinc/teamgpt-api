@@ -1,13 +1,15 @@
 import json
+import uuid
 
 import stripe
 from fastapi import APIRouter, Request, HTTPException, Depends, Security
 from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
-from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts
+from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User
 from teamgpt.schemata import StripeProductsOut, StripePaymentsOut, StripePaymentsToOut
 from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
+from teamgpt.util.auth0 import get_user_info
 
 router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
 
@@ -27,13 +29,23 @@ async def get_products(user: Auth0User = Security(auth.get_user)):
 @router.get(
     '/pay/{organization_id}',
     dependencies=[Depends(auth.implicit_scheme)],
-    response_model=StripePaymentsToOut,
 )
 async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user)):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org_obj = await Organization.filter(id=organization_id, deleted_at__isnull=True).get_or_none()
+    if org_obj is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    if org_obj.creator_id != user_info.id:
+        raise HTTPException(status_code=403, detail="You are not the creator of the organization")
     obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True,
                                       type='payment_intent.succeeded').prefetch_related(
         'stripe_products').get_or_none()
+    if obj is None:
+        return None
     return obj
+
+
+# 更改组织退订计划
 
 
 @router.get(

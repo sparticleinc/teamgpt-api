@@ -267,10 +267,10 @@ StripePaymentsOut = pydantic_model_creator(
 
 
 class StripePaymentsToOut(BaseModel):
-    api_id: str
-    type: str
-    invoice: str
-    stripe_products: StripeProductsOut
+    api_id: Optional[str] = None
+    type: Optional[str] = None
+    invoice: Optional[str] = None
+    stripe_products: Optional[StripeProductsOut] = None
 
     class Config:
         orm_mode = True
