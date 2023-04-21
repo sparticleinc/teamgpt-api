@@ -1,5 +1,4 @@
 import json
-import uuid
 
 import stripe
 from fastapi import APIRouter, Request, HTTPException, Depends, Security
@@ -7,9 +6,8 @@ from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
 from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User
-from teamgpt.schemata import StripeProductsOut, StripePaymentsOut, StripePaymentsToOut
+from teamgpt.schemata import StripeProductsOut
 from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
-from teamgpt.util.auth0 import get_user_info
 
 router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
 
@@ -21,6 +19,9 @@ router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
     response_model=list[StripeProductsOut],
 )
 async def get_products(user: Auth0User = Security(auth.get_user)):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    if user_info is None:
+        raise HTTPException(status_code=404, detail="User not found")
     obj_list = await StripeProducts.filter(deleted_at__isnull=True).all()
     return obj_list
 
