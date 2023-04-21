@@ -32,18 +32,29 @@ async def get_products(user: Auth0User = Security(auth.get_user)):
     dependencies=[Depends(auth.implicit_scheme)],
 )
 async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user)):
-    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    # user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     org_obj = await Organization.filter(id=organization_id, deleted_at__isnull=True).get_or_none()
     if org_obj is None:
         raise HTTPException(status_code=404, detail="Organization not found")
-    if org_obj.creator_id != user_info.id:
-        raise HTTPException(status_code=403, detail="You are not the creator of the organization")
+    # if org_obj.creator_id != user_info.id:
+    #     raise HTTPException(status_code=403, detail="You are not the creator of the organization")
     obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True,
                                       type='payment_intent.succeeded').prefetch_related(
         'stripe_products').get_or_none()
-    if obj is None:
+    stripe.api_key = STRIPE_API_KEY
+    sub_info = stripe.Subscription.retrieve(
+        obj.sub_id,
+    )
+    product_info = stripe.Product.retrieve(
+        sub_info['plan']['product'],
+    )
+    # 取出obj到新的对象,并且增加sub_info
+    req_obj = dict(obj)
+    req_obj['sub_info'] = sub_info
+    req_obj['product_info'] = product_info
+    if req_obj is None:
         return None
-    return obj
+    return req_obj
 
 
 # 更改组织退订计划
@@ -79,8 +90,7 @@ async def get_my_organizations(
         )
         return RedirectResponse(url=checkout_session.url, status_code=303)
     except Exception as e:
-        print(e)
-        return "Server error", 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post('/webhook')
@@ -149,6 +159,7 @@ async def webhook(request: Request):
             await StripePayments.filter(
                 invoice=invoice,
             ).update(stripe_products_id=product_obj.id, type='payment_intent.succeeded',
+                     sub_id=lines.data[0]['subscription'],
                      api_id=lines.data[0]['plan']['id'])
         elif eventType == "checkout.session.completed":
             # Checkout 支付已完成
