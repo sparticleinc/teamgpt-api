@@ -42,6 +42,8 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
                                       type='payment_intent.succeeded').prefetch_related(
         'stripe_products').get_or_none()
     stripe.api_key = STRIPE_API_KEY
+    if obj is None:
+        return None
     sub_info = stripe.Subscription.retrieve(
         obj.sub_id,
     )
@@ -58,6 +60,24 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
 
 
 # 更改组织退订计划
+@router.post(
+    '/cancel/{organization_id}',
+    dependencies=[Depends(auth.implicit_scheme)],
+)
+async def cancel_pay(organization_id: str, user: Auth0User = Security(auth.get_user)):
+    org_obj = await Organization.filter(id=organization_id, deleted_at__isnull=True).get_or_none()
+    if org_obj is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True,
+                                      type='payment_intent.succeeded').prefetch_related(
+        'stripe_products').get_or_none()
+    if obj is None:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    stripe.api_key = STRIPE_API_KEY
+    sub_info = stripe.Subscription.delete(
+        obj.sub_id,
+    )
+    print(sub_info, 'sddd')
 
 
 @router.get(
@@ -146,8 +166,12 @@ async def webhook(request: Request):
         elif eventType == "customer.subscription.deleted":
             # 订阅已取消
             subscription_id = event.data.object.id
-            invoice = event.data.object.get("invoice")
-            print(f"订阅已取消：{subscription_id} invoice:{invoice}")
+            sub_id = event.data.object.get("id")
+            print(f"订阅已取消：{subscription_id} sub_id:{sub_id}")
+            await StripePayments.filter(
+                sub_id=sub_id,
+            ).update(type='customer.subscription.deleted')
+
         elif eventType == "invoice.payment_succeeded":
             # 发票已支付
             invoice_id = event.data.object.id
