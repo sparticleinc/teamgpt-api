@@ -38,9 +38,8 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
         raise HTTPException(status_code=404, detail="Organization not found")
     # if org_obj.creator_id != user_info.id:
     #     raise HTTPException(status_code=403, detail="You are not the creator of the organization")
-    obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True,
-                                      type='payment_intent.succeeded').prefetch_related(
-        'stripe_products').get_or_none()
+    obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True).prefetch_related(
+        'stripe_products').order_by('-created_at').first()
     stripe.api_key = STRIPE_API_KEY
     if obj is None:
         return None
@@ -54,6 +53,9 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
     req_obj = dict(obj)
     req_obj['sub_info'] = sub_info
     req_obj['product_info'] = product_info
+    product = await StripeProducts.filter(api_id=product_info['default_price']).first()
+    if product is not None:
+        req_obj['product_info']['order'] = product.order
     if req_obj is None:
         return None
     return req_obj
