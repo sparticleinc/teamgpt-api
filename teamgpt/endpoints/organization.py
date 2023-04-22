@@ -8,7 +8,7 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.tortoise import paginate as _tortoise_paginate
 
 from teamgpt.enums import Role, GptKeySource
-from teamgpt.models import Organization, User, UserOrganization, GptTopic
+from teamgpt.models import Organization, User, UserOrganization, GptTopic, GptPrompt
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut, UserOut
 from teamgpt.settings import (auth)
@@ -98,8 +98,38 @@ async def update_organization_id(org_id: str):
     topics = await GptTopic.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
     # 遍历数据，更新 organization_id 字段
     for topic in topics:
-        topic.organization_id = org_id
-        await topic.save()
+        topic_count = await GptTopic.filter(title=topic.title, organization_id=org_id, pid=topic.pid,
+                                            deleted_at__isnull=True).count()
+        if topic_count > 0:
+            continue
+        new_topic = GptTopic(title=topic.title, description=topic.description, organization_id=org_id, pid=topic.pid,
+                             user_id=topic.user_id)
+        await new_topic.save()
+    prompts = await GptPrompt.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
+    for prompt in prompts:
+        prompt_count = await GptPrompt.filter(title=prompt.title, organization_id=org_id,
+                                              gpt_topic_id=prompt.gpt_topic_id, deleted_at__isnull=True).count()
+        if prompt_count > 0:
+            continue
+        new_prompt = GptPrompt(belong=prompt.belong, prompt_template=prompt.prompt_template,
+                               prompt_hint=prompt.prompt_hint, teaser=prompt.teaser,
+                               title=prompt.title, gpt_topic_id=prompt.gpt_topic_id,
+                               organization_id=prompt.organization_id,
+                               user_id=prompt.user_id)
+        await new_prompt.save()
+
+
+# 更新org的prompt
+@router.put(
+    '/{org_id}/prompt',
+    response_model=OrganizationSuperOut,
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def update_organization_prompt(
+        org_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    await update_organization_id(org_id)
 
 
 @router.delete(

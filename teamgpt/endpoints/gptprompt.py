@@ -201,23 +201,6 @@ async def get_gpt_prompts(
     return await tortoise_paginate(gpt_prompts, params, ['user'])
 
 
-@router.get("/test/")
-async def test(org_id: str, gpt_topic_id: str):
-    url = 'https://api.aiprm.com/api3/Prompts?Community=SEO-84c5d6a7b8e9f0c1&Limit=10&Offset=0&OwnerExternalID=user-Nq8Ozuosjlt0cbWcesw4FxAz&OwnerExternalSystemNo=1&SortModeNo=2&UserFootprint='
-    response = requests.get(url)
-    data_list = response.json()
-    for data in data_list:
-        await GptPrompt.create(
-            belong=['public'],
-            title=data['Title'],
-            prompt_hint=data['PromptHint'],
-            organization_id=org_id,
-            gpt_topic_id=gpt_topic_id,
-            teaser=data['Teaser'],
-            prompt_template=data['Prompt'],
-        )
-
-
 # 同步https://app1.aiprm.com/的prompt
 @router.get("/sync/aiprm", dependencies=[Depends(auth.implicit_scheme)])
 async def sync_aiprm():
@@ -242,3 +225,38 @@ async def sync_aiprm():
             if pid_info is not None:
                 await GptTopic.get_or_create(title=row[1], pid=pid_info.id, organization_id=None, user_id=None,
                                              deleted_at__isnull=True, )
+    # 取出prompt，插入表
+    url = 'https://api.aiprm.com/api3/Prompts?Community=&Limit=999999&Offset=0&OwnerExternalID=user-Nq8Ozuosjlt0cbWcesw4FxAz&OwnerExternalSystemNo=1'
+    response = requests.get(url)
+    i = 0
+    data_list = response.json()
+    for data in data_list:
+        community_index = data['Community'].index('-')
+        if data['Community'][:community_index] != '':
+            community_topic_info = await GptTopic.get_or_none(title=data['Community'][:community_index], pid=None,
+                                                              organization_id=None, user_id=None,
+                                                              deleted_at__isnull=True)
+            if community_topic_info is not None:
+                i = i + 1
+                topic_info = await GptTopic.get_or_none(pid=community_topic_info.id, title=data['Category'],
+                                                        organization_id=None,
+                                                        user_id=None,
+                                                        deleted_at__isnull=True)
+                if topic_info is not None:
+                    gpt_topic_id = topic_info.id
+                    gpt_prompt = await GptPrompt.filter(title=data['Title'], gpt_topic_id=gpt_topic_id).first()
+                    if gpt_prompt is not None:
+                        gpt_prompt.prompt_hint = data['PromptHint']
+                        gpt_prompt.teaser = data['Teaser']
+                        gpt_prompt.prompt_template = data['Prompt']
+                        await gpt_prompt.save()
+                    else:
+                        await GptPrompt.create(
+                            belong=['public'],
+                            title=data['Title'],
+                            prompt_hint=data['PromptHint'],
+                            gpt_topic_id=gpt_topic_id,
+                            teaser=data['Teaser'],
+                            prompt_template=data['Prompt'],
+                        )
+    return {'msg': 'success', 'count': i}
