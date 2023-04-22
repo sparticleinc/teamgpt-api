@@ -8,7 +8,7 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.tortoise import paginate as _tortoise_paginate
 
 from teamgpt.enums import Role, GptKeySource
-from teamgpt.models import Organization, User, UserOrganization, GptTopic, GptPrompt
+from teamgpt.models import Organization, User, UserOrganization, GptTopic
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut, UserOut
 from teamgpt.settings import (auth)
@@ -102,23 +102,22 @@ async def update_organization_id(org_id: str):
         new_topic = GptTopic(title=topic.title, description=topic.description, organization_id=org_id, pid=topic.pid,
                              user_id=topic.user_id)
         await new_topic.save()
+        topics_pid = await GptTopic.filter(pid=topic.id, organization_id=None, pid__isnull=False, user_id=None,
+                                           deleted_at__isnull=True).all()
+        for topic_find in topics_pid:
+            new_topic = await GptTopic(title=topic_find.title, description=topic_find.description,
+                                       organization_id=org_id,
+                                       pid=new_topic.id)
+            await new_topic.save()
 
-    topics_pid = await GptTopic.filter(pid__isnull=False, user_id=None, organization_id=None,
-                                       deleted_at__isnull=True).all()
-    for topic in topics_pid:
-        new_topic = await GptTopic(title=topic.title, description=topic.description, organization_id=org_id,
-                                   pid=topic.pid,
-                                   user_id=topic.user_id)
-        await new_topic.save()
-
-    prompts = await GptPrompt.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
-    for prompt in prompts:
-        new_prompt = GptPrompt(belong=prompt.belong, prompt_template=prompt.prompt_template,
-                               prompt_hint=prompt.prompt_hint, teaser=prompt.teaser,
-                               title=prompt.title, gpt_topic_id=prompt.gpt_topic_id,
-                               organization_id=prompt.organization_id,
-                               user_id=prompt.user_id)
-        await new_prompt.save()
+    # prompts = await GptPrompt.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
+    # for prompt in prompts:
+    #     new_prompt = GptPrompt(belong=prompt.belong, prompt_template=prompt.prompt_template,
+    #                            prompt_hint=prompt.prompt_hint, teaser=prompt.teaser,
+    #                            title=prompt.title, gpt_topic_id=prompt.gpt_topic_id,
+    #                            organization_id=prompt.organization_id,
+    #                            user_id=prompt.user_id)
+    #     await new_prompt.save()
 
 
 # 更新org的prompt
