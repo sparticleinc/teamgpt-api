@@ -114,7 +114,7 @@ async def update_organization_id(org_id: str):
                 new_prompt = GptPrompt(belong=prompt.belong, prompt_template=prompt.prompt_template,
                                        prompt_hint=prompt.prompt_hint, teaser=prompt.teaser,
                                        title=prompt.title, gpt_topic_id=new_topic_find.id,
-                                       organization_id=prompt.organization_id,
+                                       organization_id=org_id,
                                        user_id=prompt.user_id)
                 await new_prompt.save()
 
