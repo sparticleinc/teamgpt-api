@@ -1,16 +1,15 @@
-import json
+import csv
 from typing import Optional
 
+import requests
 from fastapi import APIRouter, Depends, Security, HTTPException
+from fastapi_auth0 import Auth0User
 from starlette.status import HTTP_204_NO_CONTENT
-from stripe.http_client import requests
 
 from teamgpt.models import GptTopic, GptPrompt, User
 from teamgpt.parameters import Page, tortoise_paginate, ListAPIParams
 from teamgpt.schemata import GptTopicOut, GptTopicIn, GptPromptIn, GptPromptOut, GptPromptToOut
-
 from teamgpt.settings import (auth)
-from fastapi_auth0 import Auth0User
 
 router = APIRouter(prefix='/api/v1/gpt_prompt', tags=['GptPrompt'])
 
@@ -217,3 +216,29 @@ async def test(org_id: str, gpt_topic_id: str):
             teaser=data['Teaser'],
             prompt_template=data['Prompt'],
         )
+
+
+# 同步https://app1.aiprm.com/的prompt
+@router.get("/sync/aiprm", dependencies=[Depends(auth.implicit_scheme)])
+async def sync_aiprm():
+    # 取出所有的topic,插入表
+    topic_url = 'https://api.aiprm.com/csv/topics-20230123.csv'
+    topic_response = requests.get(topic_url)
+    topic_reader = csv.reader(topic_response.text.strip().split('\n'))
+    next(topic_reader)
+    for row in topic_reader:
+        await GptTopic.get_or_create(title=row[1], pid=None, organization_id=None, user_id=None,
+                                     deleted_at__isnull=True, )
+    # 取出所有activities,插入表
+    activities_url = 'https://api.aiprm.com/csv/activities-20230124.csv'
+    activities_response = requests.get(activities_url)
+    activities_reader = csv.reader(activities_response.text.strip().split('\n'))
+    next(activities_reader)
+    for row in activities_reader:
+        index = row[0].index('-')
+        if row[0][:index] != '':
+            pid_info = await GptTopic.get_or_none(title=row[0][:index], pid=None, organization_id=None, user_id=None,
+                                                  deleted_at__isnull=True)
+            if pid_info is not None:
+                await GptTopic.get_or_create(title=row[1], pid=pid_info.id, organization_id=None, user_id=None,
+                                             deleted_at__isnull=True, )

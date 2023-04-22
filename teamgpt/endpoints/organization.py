@@ -1,17 +1,17 @@
 import uuid
-import random
 from datetime import datetime, timedelta
+
 import pytz
 from fastapi import APIRouter, Depends, HTTPException, Security
-from fastapi_pagination import Page
-from teamgpt.enums import Role, GptKeySource
-from teamgpt.models import Organization, User, UserOrganization
-from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut, UserOut
-from teamgpt.settings import (auth)
 from fastapi_auth0 import Auth0User
-from teamgpt.parameters import ListAPIParams, tortoise_paginate
+from fastapi_pagination import Page
 from fastapi_pagination.ext.tortoise import paginate as _tortoise_paginate
 
+from teamgpt.enums import Role, GptKeySource
+from teamgpt.models import Organization, User, UserOrganization, GptTopic
+from teamgpt.parameters import ListAPIParams, tortoise_paginate
+from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut, UserOut
+from teamgpt.settings import (auth)
 from teamgpt.util import random_run
 
 router = APIRouter(prefix='/api/v1/organization', tags=['Organization'])
@@ -88,8 +88,18 @@ async def create_organization(
         raise HTTPException(
             status_code=400, detail='Organization name already exists')
     await UserOrganization.create(user=user_info, organization_id=new_org_obj.id, role=Role.CREATOR)
-
+    # 插入系统的aiprm
+    await update_organization_id(new_org_obj.id)
     return await OrganizationOut.from_tortoise_orm(new_org_obj)
+
+
+async def update_organization_id(org_id: str):
+    # 查询 organization_id 为空的数据
+    topics = await GptTopic.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
+    # 遍历数据，更新 organization_id 字段
+    for topic in topics:
+        topic.organization_id = org_id
+        await topic.save()
 
 
 @router.delete(
@@ -220,6 +230,7 @@ async def delete_organization_user(
     await user_organization.soft_delete()
 
     return await UserOut.from_tortoise_orm(user_info)
+
 
 # 邀请人加入Organization
 
