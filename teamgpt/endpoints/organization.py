@@ -102,13 +102,12 @@ async def update_organization_id(org_id: str):
         new_topic = GptTopic(title=topic.title, description=topic.description, organization_id=org_id, pid=topic.pid,
                              user_id=topic.user_id)
         await new_topic.save()
-        topics_pid = await GptTopic.filter(pid=topic.id, organization_id=None, pid__isnull=False, user_id=None,
-                                           deleted_at__isnull=True).all()
+        topics_pid = await GptTopic.filter(pid=topic.id).all()
         for topic_find in topics_pid:
-            new_topic = await GptTopic(title=topic_find.title, description=topic_find.description,
-                                       organization_id=org_id,
-                                       pid=new_topic.id)
-            await new_topic.save()
+            new_topic_find = await GptTopic(title=topic_find.title, description=topic_find.description,
+                                            organization_id=org_id,
+                                            pid=new_topic.id)
+            await new_topic_find.save()
 
     # prompts = await GptPrompt.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
     # for prompt in prompts:
