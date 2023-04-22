@@ -122,7 +122,6 @@ async def update_organization_id(org_id: str):
 # 更新org的prompt
 @router.put(
     '/{org_id}/prompt',
-    response_model=OrganizationSuperOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )
 async def update_organization_prompt(
