@@ -95,22 +95,24 @@ async def create_organization(
 
 async def update_organization_id(org_id: str):
     # 查询 organization_id 为空的数据
-    topics = await GptTopic.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
+    topics_first = await GptTopic.filter(organization_id=None, pid__isnull=True, user_id=None,
+                                         deleted_at__isnull=True).all()
     # 遍历数据，更新 organization_id 字段
-    for topic in topics:
-        topic_count = await GptTopic.filter(title=topic.title, organization_id=org_id, pid=topic.pid,
-                                            deleted_at__isnull=True).count()
-        if topic_count > 0:
-            continue
+    for topic in topics_first:
         new_topic = GptTopic(title=topic.title, description=topic.description, organization_id=org_id, pid=topic.pid,
                              user_id=topic.user_id)
         await new_topic.save()
+
+    topics_pid = await GptTopic.filter(pid__isnull=False, user_id=None, organization_id=None,
+                                       deleted_at__isnull=True).all()
+    for topic in topics_pid:
+        new_topic = await GptTopic(title=topic.title, description=topic.description, organization_id=org_id,
+                                   pid=topic.pid,
+                                   user_id=topic.user_id)
+        await new_topic.save()
+
     prompts = await GptPrompt.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
     for prompt in prompts:
-        prompt_count = await GptPrompt.filter(title=prompt.title, organization_id=org_id,
-                                              gpt_topic_id=prompt.gpt_topic_id, deleted_at__isnull=True).count()
-        if prompt_count > 0:
-            continue
         new_prompt = GptPrompt(belong=prompt.belong, prompt_template=prompt.prompt_template,
                                prompt_hint=prompt.prompt_hint, teaser=prompt.teaser,
                                title=prompt.title, gpt_topic_id=prompt.gpt_topic_id,
