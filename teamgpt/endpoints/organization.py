@@ -8,7 +8,7 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.tortoise import paginate as _tortoise_paginate
 
 from teamgpt.enums import Role, GptKeySource
-from teamgpt.models import Organization, User, UserOrganization, GptTopic
+from teamgpt.models import Organization, User, UserOrganization, GptTopic, GptPrompt
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import OrganizationOut, OrganizationIn, UserOrganizationToOut, OrganizationSuperOut, UserOut
 from teamgpt.settings import (auth)
@@ -108,15 +108,15 @@ async def update_organization_id(org_id: str):
                                             organization_id=org_id,
                                             pid=new_topic.id)
             await new_topic_find.save()
-
-    # prompts = await GptPrompt.filter(organization_id=None, user_id=None, deleted_at__isnull=True).all()
-    # for prompt in prompts:
-    #     new_prompt = GptPrompt(belong=prompt.belong, prompt_template=prompt.prompt_template,
-    #                            prompt_hint=prompt.prompt_hint, teaser=prompt.teaser,
-    #                            title=prompt.title, gpt_topic_id=prompt.gpt_topic_id,
-    #                            organization_id=prompt.organization_id,
-    #                            user_id=prompt.user_id)
-    #     await new_prompt.save()
+            prompts = await GptPrompt.filter(gpt_topic_id=topic_find.id, organization_id=None, user_id=None,
+                                             deleted_at__isnull=True).all()
+            for prompt in prompts:
+                new_prompt = GptPrompt(belong=prompt.belong, prompt_template=prompt.prompt_template,
+                                       prompt_hint=prompt.prompt_hint, teaser=prompt.teaser,
+                                       title=prompt.title, gpt_topic_id=new_topic_find.id,
+                                       organization_id=prompt.organization_id,
+                                       user_id=prompt.user_id)
+                await new_prompt.save()
 
 
 # 更新org的prompt
