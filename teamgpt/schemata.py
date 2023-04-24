@@ -303,3 +303,4 @@ class OrgPaymentPlanOut(BaseModel):
     is_join: Optional[bool] = False
     expiration_time: Optional[str] = None
     is_send_msg: Optional[bool] = False
+    sys_token: Optional[bool] = False

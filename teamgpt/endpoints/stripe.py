@@ -239,6 +239,7 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
         out.is_plan = True
         out.plan_max_number = products_obj.max_number
         out.plan_remaining_number = products_obj.max_number - org_user_number
+        out.sys_token = products_obj.sys_token
         if out.plan_remaining_number > 0:
             out.is_join = True
             return out
