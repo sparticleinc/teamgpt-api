@@ -1,12 +1,10 @@
-import json
 import uuid
 from typing import Optional
 
-from tortoise.contrib.pydantic import pydantic_model_creator
-from teamgpt import models
 from pydantic import BaseModel
+from tortoise.contrib.pydantic import pydantic_model_creator
 
-from teamgpt.models import StripeProducts
+from teamgpt import models
 
 UserOut = pydantic_model_creator(
     models.User,
@@ -293,3 +291,15 @@ class GptPromptToOut(BaseModel):
 class StripeCheckoutIn(BaseModel):
     lookup_key: str
     organization_id: str
+
+
+class OrgPaymentPlanOut(BaseModel):
+    is_super: Optional[bool] = False
+    is_plan: Optional[bool] = False
+    plan_max_number: Optional[int] = 0
+    plan_remaining_number: Optional[int] = 0
+    is_try: Optional[bool] = False
+    try_day: Optional[int] = 0
+    is_join: Optional[bool] = False
+    expiration_time: Optional[str] = ''
+    is_send_msg: Optional[bool] = False

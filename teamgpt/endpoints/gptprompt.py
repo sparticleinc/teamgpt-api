@@ -219,8 +219,18 @@ async def sync_aiprm():
     next(activities_reader)
     for row in activities_reader:
         index = row[0].index('-')
-        if row[0][:index] != '':
-            pid_info = await GptTopic.get_or_none(title=row[0][:index], pid=None, organization_id=None, user_id=None,
+        new_text = row[0][:index]
+        if new_text != '':
+            if new_text == 'OperatingSystems':
+                new_text = 'Operating Systems'
+            if new_text == 'Applications':
+                new_text = 'Software Applications'
+            if new_text == 'SoftwareEngineering':
+                new_text = 'Software Engineering'
+            if new_text == 'Generative':
+                new_text = 'Generative AI'
+        if new_text != '':
+            pid_info = await GptTopic.get_or_none(title=new_text, pid=None, organization_id=None, user_id=None,
                                                   deleted_at__isnull=True)
             if pid_info is not None:
                 await GptTopic.get_or_create(title=row[1], pid=pid_info.id, organization_id=None, user_id=None,
@@ -232,8 +242,17 @@ async def sync_aiprm():
     data_list = response.json()
     for data in data_list:
         community_index = data['Community'].index('-')
-        if data['Community'][:community_index] != '':
-            community_topic_info = await GptTopic.get_or_none(title=data['Community'][:community_index], pid=None,
+        new_text = data['Community'][:community_index]
+        if new_text != '':
+            if new_text == 'OperatingSystems':
+                new_text = 'Operating Systems'
+            if new_text == 'Applications':
+                new_text = 'Software Applications'
+            if new_text == 'SoftwareEngineering':
+                new_text = 'Software Engineering'
+            if new_text == 'Generative':
+                new_text = 'Generative AI'
+            community_topic_info = await GptTopic.get_or_none(title=new_text, pid=None,
                                                               organization_id=None, user_id=None,
                                                               deleted_at__isnull=True)
             if community_topic_info is not None:

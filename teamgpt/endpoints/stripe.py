@@ -1,12 +1,14 @@
 import json
+from datetime import datetime, timedelta
 
+import pytz
 import stripe
 from fastapi import APIRouter, Request, HTTPException, Depends, Security
 from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
-from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User
-from teamgpt.schemata import StripeProductsOut
+from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User, UserOrganization
+from teamgpt.schemata import StripeProductsOut, OrgPaymentPlanOut
 from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
 
 router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
@@ -79,7 +81,7 @@ async def cancel_pay(organization_id: str, user: Auth0User = Security(auth.get_u
     sub_info = stripe.Subscription.delete(
         obj.sub_id,
     )
-    print(sub_info, 'sddd')
+    return sub_info
 
 
 @router.get(
@@ -128,44 +130,44 @@ async def webhook(request: Request):
             data=json.dumps(event['data']),
         )
 
-        eventType = event.type
+        event_type = event.type
 
         # 获取事件的元数据
         metadata = event.data.object.get("metadata")
 
         # 根据事件类型进行不同的处理，同时将 organization_id 与事件进行关联
-        if eventType == "payment_intent.succeeded":
+        if event_type == "payment_intent.succeeded":
             # 支付成功
             payment_id = event.data.object.id
             invoice = event.data.object.get("invoice")
             print(f"支付成功：{payment_id} invoice:{invoice}")
 
-        elif eventType == "payment_intent.payment_failed":
+        elif event_type == "payment_intent.payment_failed":
             # 支付失败
             payment_id = event.data.object.id
             invoice = event.data.object.get("invoice")
             print(f"支付失败：{payment_id} invoice:{invoice}")
-        elif eventType == "charge.succeeded":
+        elif event_type == "charge.succeeded":
             # 付款成功
             payment_id = event.data.object.id
             invoice = event.data.object.get("invoice")
             print(f"已付款：{payment_id} invoice:{invoice}")
-        elif eventType == "charge.refunded":
+        elif event_type == "charge.refunded":
             # 退款成功
             payment_id = event.data.object.id
             invoice = event.data.object.get("invoice")
             print(f"已退款：{payment_id} invoice:{invoice}")
-        elif eventType == "customer.subscription.created":
+        elif event_type == "customer.subscription.created":
             # 订阅已创建
             subscription_id = event.data.object.id
             invoice = event.data.object.get("invoice")
             print(f"订阅已创建：{subscription_id} invoice:{invoice}")
-        elif eventType == "customer.subscription.updated":
+        elif event_type == "customer.subscription.updated":
             # 订阅已更新
             subscription_id = event.data.object.id
             invoice = event.data.object.get("invoice")
             print(f"订阅已更新：{subscription_id} invoice:{invoice}")
-        elif eventType == "customer.subscription.deleted":
+        elif event_type == "customer.subscription.deleted":
             # 订阅已取消
             subscription_id = event.data.object.id
             sub_id = event.data.object.get("id")
@@ -174,7 +176,7 @@ async def webhook(request: Request):
                 sub_id=sub_id,
             ).update(type='customer.subscription.deleted')
 
-        elif eventType == "invoice.payment_succeeded":
+        elif event_type == "invoice.payment_succeeded":
             # 发票已支付
             invoice_id = event.data.object.id
             invoice = event.data.object.get("id")
@@ -187,7 +189,7 @@ async def webhook(request: Request):
             ).update(stripe_products_id=product_obj.id, type='payment_intent.succeeded',
                      sub_id=lines.data[0]['subscription'],
                      api_id=lines.data[0]['plan']['id'])
-        elif eventType == "checkout.session.completed":
+        elif event_type == "checkout.session.completed":
             # Checkout 支付已完成
             checkout_id = event.data.object.id
             organization_id = metadata.get("organization_id")
@@ -199,16 +201,59 @@ async def webhook(request: Request):
                 customer_details=json.dumps(event.data.object.get("customer_details")),
             )
             print(f"Checkout 支付已完成：{checkout_id} [组织 ID：{organization_id}] invoice:{invoice}")
-        elif eventType == "account.updated":
+        elif event_type == "account.updated":
             # Stripe 账户已更新
             account_id = event.data.object.id
             invoice = event.data.object.get("invoice")
             print(f"Stripe 账户已更新：{account_id} invoice:{invoice}")
         else:
             # 其他事件
-            print(f"其他事件类型：{eventType}")
+            print(f"其他事件类型：{event_type}")
         return {"message": "success"}
     except Exception as e:
         # 其他异常错误
         print(f"其他异常错误：{e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# 判断组织属性,是否在试用期,是否过期,和付费计划
+async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
+    out = OrgPaymentPlanOut()
+    if org_obj.super is True:
+        out.is_join = True
+        out.is_super = True
+        out.is_send_msg = True
+        return out
+    # 查询组织是否有付费计划
+    obj = await StripePayments.filter(organization_id=org_obj.id, deleted_at__isnull=True,
+                                      type='payment_intent.succeeded').prefetch_related(
+        'stripe_products').order_by('-created_at').first()
+    org_user_number = await UserOrganization.filter(organization_id=org_obj.id, deleted_at__isnull=True).count()
+
+    if obj:
+        out.is_send_msg = True
+        # 查看已经有多少人了,使用了是什么套餐
+        products_obj = await StripeProducts.filter(id=obj.stripe_products_id).first()
+        if products_obj is None:
+            return out
+        out.is_plan = True
+        out.plan_max_number = products_obj.max_number
+        out.plan_remaining_number = products_obj.max_number - org_user_number
+        if out.plan_remaining_number > 0:
+            out.is_join = True
+            return out
+        return out
+    # 查询组织是否在试用期
+    out.is_try = True
+    created_at_utc = org_obj.created_at.astimezone(pytz.utc)
+    now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
+    out.expiration_time = created_at_utc + timedelta(days=3)
+    if created_at_utc + timedelta(days=3) < now_utc:
+        out.is_try = False
+    else:
+        out.is_try = True
+        out.is_send_msg = True
+        out.try_day = abs((now_utc - (created_at_utc + timedelta(days=3))).days)
+        if org_user_number < 3:
+            out.is_join = True
+    return out
