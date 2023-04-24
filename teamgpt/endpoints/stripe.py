@@ -247,7 +247,7 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
     out.is_try = True
     created_at_utc = org_obj.created_at.astimezone(pytz.utc)
     now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
-    out.expiration_time = created_at_utc + timedelta(days=3)
+    out.expiration_time = str(created_at_utc + timedelta(days=3))
     if created_at_utc + timedelta(days=3) < now_utc:
         out.is_try = False
     else:
@@ -264,5 +264,4 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
             )
 async def payment_plan(organization_id: str, user: Auth0User = Security(auth.get_user)):
     org_obj = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
-    print(org_obj, '233322')
     return await org_payment_plan(org_obj)
