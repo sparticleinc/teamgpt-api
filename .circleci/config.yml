@@ -6,7 +6,7 @@ orbs:
 jobs:
   install:
     docker:
-      - image: cimg/python:3.10.10
+      - image: cimg/python:3.11.3
     resource_class: medium
     steps:
       - checkout # checkout source code
@@ -102,14 +102,13 @@ workflows:
             branches:
               only: 
               - main
-              - circleo-ci
-              - pre
+              - prd
               - /^[0-9]*.wk[0-9]*$/
           # requires:
           #   - backend-install
           
       - deploy:
-          name: prod-backend-deploy
+          name: dev-backend-deploy
           docker-tag: ""
           path: "/home/ubuntu/coss-cluster-config/circleo-dev/teamgpt-api/deploy.yaml"
           deploy-name: teamgpt-api
@@ -121,5 +120,19 @@ workflows:
               only:
                 - main
                 - /^[0-9]*.wk[0-9]*$/
+          requires:
+            - backend-build
+      - deploy:
+          name: prd-backend-deploy
+          docker-tag: ""
+          path: "/home/ubuntu/coss-cluster-config/circleo/teamgpt-api/deploy.yaml"
+          deploy-name: teamgpt-api
+          deploy-namespace: metaoffice
+          context:
+            - ecr-new
+          filters:
+            branches:
+              only:
+                - prd
           requires:
             - backend-build
