@@ -1,20 +1,21 @@
 import json
 import time
 import uuid
+from typing import Union
 
 import openai
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
+from fastapi_auth0 import Auth0User
 from fastapi_pagination import Page
 from sse_starlette import EventSourceResponse
 from starlette.status import HTTP_204_NO_CONTENT
-from typing import Union
 
+from teamgpt.endpoints.stripe import org_payment_plan
 from teamgpt.enums import GptModel, ContentType, AutherUser, GptKeySource
 from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey, GptChatMessage
+from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
 from teamgpt.settings import (auth)
-from fastapi_auth0 import Auth0User
-from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num
 
 router = APIRouter(prefix='/api/v1/conversations', tags=['Conversations'])
@@ -113,18 +114,27 @@ async def create_conversations_message(
     # 查询gpt-key配置信息,判断是否是系统的
     key = ''
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
+    plan_info = await org_payment_plan(org_info)
+    if plan_info.is_send_msg is False:
+        raise HTTPException(status_code=420, detail='Not allowed to send messages')
     if org_info is None:
         raise HTTPException(status_code=404, detail='Organization not found')
     if org_info.gpt_key_source is GptKeySource.SYSTEM:
         sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
         if sys_gpt_key is None:
-            raise HTTPException(status_code=404, detail='SYS GPT key not found')
+            raise HTTPException(status_code=423, detail='SYS GPT key not found')
         key = sys_gpt_key.key
     else:
         gpt_key = await GPTKey.get_or_none(organization_id=organization_id, deleted_at__isnull=True)
-        if gpt_key is None:
-            raise HTTPException(status_code=404, detail='GPT key not found')
         key = gpt_key.key
+        if gpt_key is None:
+            if plan_info.sys_token is True:
+                sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
+                if sys_gpt_key is None:
+                    raise HTTPException(status_code=423, detail='SYS GPT key not found')
+                key = sys_gpt_key.key
+            else:
+                raise HTTPException(status_code=423, detail='GPT key not found')
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     message_log = []
     # 判断是否存在会话,没有先创建会话

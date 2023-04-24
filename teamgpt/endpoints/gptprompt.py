@@ -1,16 +1,15 @@
-import json
+import csv
 from typing import Optional
 
+import requests
 from fastapi import APIRouter, Depends, Security, HTTPException
+from fastapi_auth0 import Auth0User
 from starlette.status import HTTP_204_NO_CONTENT
-from stripe.http_client import requests
 
 from teamgpt.models import GptTopic, GptPrompt, User
 from teamgpt.parameters import Page, tortoise_paginate, ListAPIParams
 from teamgpt.schemata import GptTopicOut, GptTopicIn, GptPromptIn, GptPromptOut, GptPromptToOut
-
 from teamgpt.settings import (auth)
-from fastapi_auth0 import Auth0User
 
 router = APIRouter(prefix='/api/v1/gpt_prompt', tags=['GptPrompt'])
 
@@ -202,18 +201,81 @@ async def get_gpt_prompts(
     return await tortoise_paginate(gpt_prompts, params, ['user'])
 
 
-@router.get("/test/")
-async def test(org_id: str, gpt_topic_id: str):
-    url = 'https://api.aiprm.com/api3/Prompts?Community=SEO-84c5d6a7b8e9f0c1&Limit=10&Offset=0&OwnerExternalID=user-Nq8Ozuosjlt0cbWcesw4FxAz&OwnerExternalSystemNo=1&SortModeNo=2&UserFootprint='
+# 同步https://app1.aiprm.com/的prompt
+@router.get("/sync/aiprm", dependencies=[Depends(auth.implicit_scheme)])
+async def sync_aiprm():
+    # 取出所有的topic,插入表
+    topic_url = 'https://api.aiprm.com/csv/topics-20230123.csv'
+    topic_response = requests.get(topic_url)
+    topic_reader = csv.reader(topic_response.text.strip().split('\n'))
+    next(topic_reader)
+    for row in topic_reader:
+        await GptTopic.get_or_create(title=row[1], pid=None, organization_id=None, user_id=None,
+                                     deleted_at__isnull=True, )
+    # 取出所有activities,插入表
+    activities_url = 'https://api.aiprm.com/csv/activities-20230124.csv'
+    activities_response = requests.get(activities_url)
+    activities_reader = csv.reader(activities_response.text.strip().split('\n'))
+    next(activities_reader)
+    for row in activities_reader:
+        index = row[0].index('-')
+        new_text = row[0][:index]
+        if new_text != '':
+            if new_text == 'OperatingSystems':
+                new_text = 'Operating Systems'
+            if new_text == 'Applications':
+                new_text = 'Software Applications'
+            if new_text == 'SoftwareEngineering':
+                new_text = 'Software Engineering'
+            if new_text == 'Generative':
+                new_text = 'Generative AI'
+        if new_text != '':
+            pid_info = await GptTopic.get_or_none(title=new_text, pid=None, organization_id=None, user_id=None,
+                                                  deleted_at__isnull=True)
+            if pid_info is not None:
+                await GptTopic.get_or_create(title=row[1], pid=pid_info.id, organization_id=None, user_id=None,
+                                             deleted_at__isnull=True, )
+    # 取出prompt，插入表
+    url = 'https://api.aiprm.com/api3/Prompts?Community=&Limit=999999&Offset=0&OwnerExternalID=user-Nq8Ozuosjlt0cbWcesw4FxAz&OwnerExternalSystemNo=1'
     response = requests.get(url)
+    i = 0
     data_list = response.json()
     for data in data_list:
-        await GptPrompt.create(
-            belong=['public'],
-            title=data['Title'],
-            prompt_hint=data['PromptHint'],
-            organization_id=org_id,
-            gpt_topic_id=gpt_topic_id,
-            teaser=data['Teaser'],
-            prompt_template=data['Prompt'],
-        )
+        community_index = data['Community'].index('-')
+        new_text = data['Community'][:community_index]
+        if new_text != '':
+            if new_text == 'OperatingSystems':
+                new_text = 'Operating Systems'
+            if new_text == 'Applications':
+                new_text = 'Software Applications'
+            if new_text == 'SoftwareEngineering':
+                new_text = 'Software Engineering'
+            if new_text == 'Generative':
+                new_text = 'Generative AI'
+            community_topic_info = await GptTopic.get_or_none(title=new_text, pid=None,
+                                                              organization_id=None, user_id=None,
+                                                              deleted_at__isnull=True)
+            if community_topic_info is not None:
+                i = i + 1
+                topic_info = await GptTopic.get_or_none(pid=community_topic_info.id, title=data['Category'],
+                                                        organization_id=None,
+                                                        user_id=None,
+                                                        deleted_at__isnull=True)
+                if topic_info is not None:
+                    gpt_topic_id = topic_info.id
+                    gpt_prompt = await GptPrompt.filter(title=data['Title'], gpt_topic_id=gpt_topic_id).first()
+                    if gpt_prompt is not None:
+                        gpt_prompt.prompt_hint = data['PromptHint']
+                        gpt_prompt.teaser = data['Teaser']
+                        gpt_prompt.prompt_template = data['Prompt']
+                        await gpt_prompt.save()
+                    else:
+                        await GptPrompt.create(
+                            belong=['public'],
+                            title=data['Title'],
+                            prompt_hint=data['PromptHint'],
+                            gpt_topic_id=gpt_topic_id,
+                            teaser=data['Teaser'],
+                            prompt_template=data['Prompt'],
+                        )
+    return {'msg': 'success', 'count': i}
