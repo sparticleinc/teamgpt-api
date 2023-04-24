@@ -120,6 +120,40 @@ async def update_organization_id(org_id: str):
                 await new_prompt.save()
 
 
+@router.delete(
+    '/{org_id}/user/{user_id}',
+    dependencies=[Depends(auth.implicit_scheme)]
+)
+async def delete_organization_user(
+        org_id: str,
+        user_id: str,
+        user: Auth0User = Security(auth.get_user)
+):
+    current_user = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
+    if not org_obj:
+        raise HTTPException(
+            status_code=404, detail='Organization id not found')
+    if org_obj.creator_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail='User not authorized to delete this organization member')
+
+    user_info = await User.get_or_none(user_id=user_id, deleted_at__isnull=True)
+    if not user_info:
+        raise HTTPException(
+            status_code=404, detail='User not found')
+
+    user_organization = await UserOrganization.get_or_none(organization_id=org_obj.id, user_id=user_info.id,
+                                                           deleted_at__isnull=True)
+    if not user_organization:
+        raise HTTPException(
+            status_code=404, detail='User not found in this organization')
+
+    await user_organization.soft_delete()
+
+    return await UserOut.from_tortoise_orm(user_info)
+
+
 # 更新org的prompt
 @router.put(
     '/{org_id}/prompt',
@@ -228,38 +262,6 @@ async def get_users_in_organization(
 
 
 # 删除组织成员
-@router.delete(
-    '/{org_id}/user/{user_id}',
-    dependencies=[Depends(auth.implicit_scheme)]
-)
-async def delete_organization_user(
-        org_id: str,
-        user_id: str,
-        user: Auth0User = Security(auth.get_user)
-):
-    current_user = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
-    org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
-    if not org_obj:
-        raise HTTPException(
-            status_code=404, detail='Organization id not found')
-    if org_obj.creator_id != current_user.id:
-        raise HTTPException(
-            status_code=403, detail='User not authorized to delete this organization member')
-
-    user_info = await User.get_or_none(user_id=user_id, deleted_at__isnull=True)
-    if not user_info:
-        raise HTTPException(
-            status_code=404, detail='User not found')
-
-    user_organization = await UserOrganization.get_or_none(organization_id=org_obj.id, user_id=user_info.id,
-                                                           deleted_at__isnull=True)
-    if not user_organization:
-        raise HTTPException(
-            status_code=404, detail='User not found in this organization')
-
-    await user_organization.soft_delete()
-
-    return await UserOut.from_tortoise_orm(user_info)
 
 
 # 邀请人加入Organization
