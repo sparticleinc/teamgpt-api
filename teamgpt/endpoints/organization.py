@@ -278,7 +278,7 @@ async def invite_user_to_organization(
     create_user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     user_info = await User.get_or_none(email=email, deleted_at__isnull=True)
     org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
-    org_payment_plan_info = await org_payment_plan(org_id)
+    org_payment_plan_info = await org_payment_plan(org_obj)
     if org_payment_plan_info.is_join is False:
         raise HTTPException(
             status_code=421, detail='Organization not allow join')

@@ -217,13 +217,13 @@ async def webhook(request: Request):
 
 
 # 判断组织属性,是否在试用期,是否过期,和付费计划
-async def org_payment_plan(org_id: str) -> OrgPaymentPlanOut:
+async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
     out = OrgPaymentPlanOut()
     # 查询组织是否有付费计划
-    obj = await StripePayments.filter(organization_id=org_id, deleted_at__isnull=True,
+    obj = await StripePayments.filter(organization_id=org_obj.id, deleted_at__isnull=True,
                                       type='payment_intent.succeeded').prefetch_related(
         'stripe_products').order_by('-created_at').first()
-    org_user_number = await UserOrganization.filter(organization_id=org_id, deleted_at__isnull=True).count()
+    org_user_number = await UserOrganization.filter(organization_id=org_obj.id, deleted_at__isnull=True).count()
 
     if obj:
         # 查看已经有多少人了,使用了是什么套餐
@@ -239,7 +239,6 @@ async def org_payment_plan(org_id: str) -> OrgPaymentPlanOut:
         return out
     # 查询组织是否在试用期
     out.is_try = True
-    org_obj = await Organization.filter(id=org_id, deleted_at__isnull=True).get_or_none()
     created_at_utc = org_obj.created_at.astimezone(pytz.utc)
     now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
     out.expiration_time = created_at_utc + timedelta(days=3)
