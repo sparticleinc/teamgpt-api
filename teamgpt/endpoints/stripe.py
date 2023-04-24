@@ -257,3 +257,12 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
         if org_user_number < 3:
             out.is_join = True
     return out
+
+
+@router.get("/payment/{organization_id}",
+            response_model=OrgPaymentPlanOut,
+            )
+async def payment_plan(organization_id: str, user: Auth0User = Security(auth.get_user)):
+    org_obj = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
+    print(org_obj, '233322')
+    return await org_payment_plan(org_obj)
