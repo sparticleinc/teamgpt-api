@@ -122,15 +122,17 @@ workflows:
                 - /^[0-9]*.wk[0-9]*$/
           requires:
             - backend-build
-          when:
-            branch: prd
-            steps:
-              - deploy:
-                  name: prd-backend-deploy
-                  path: "/home/ubuntu/coss-cluster-config/circleo/teamgpt-api/deploy.yaml"
-                  deploy-name: teamgpt-api
-                  deploy-namespace: metaoffice
-                  context:
-                    - ecr-new
-                  requires:
-                    - backend_build
+      - deploy:
+          name: prd-backend-deploy
+          docker-tag: ""
+          path: "/home/ubuntu/coss-cluster-config/circleo/teamgpt-api/deploy.yaml"
+          deploy-name: teamgpt-api
+          deploy-namespace: metaoffice
+          context:
+            - ecr-new
+          filters:
+            branches:
+              only:
+                - prd
+          requires:
+            - backend-build
