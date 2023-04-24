@@ -301,3 +301,4 @@ class OrgPaymentPlanOut(BaseModel):
     try_day: Optional[int] = 0
     is_join: Optional[bool] = False
     expiration_time: Optional[str] = ''
+    is_send_msg: Optional[bool] = False

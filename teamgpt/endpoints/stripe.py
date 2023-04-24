@@ -226,6 +226,7 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
     org_user_number = await UserOrganization.filter(organization_id=org_obj.id, deleted_at__isnull=True).count()
 
     if obj:
+        out.is_send_msg = True
         # 查看已经有多少人了,使用了是什么套餐
         products_obj = await StripeProducts.filter(id=obj.stripe_products_id).first()
         if products_obj is None:
@@ -246,6 +247,7 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
         out.is_try = False
     else:
         out.is_try = True
+        out.is_send_msg = True
         out.try_day = abs((now_utc - (created_at_utc + timedelta(days=3))).days)
         if org_user_number < 3:
             out.is_join = True

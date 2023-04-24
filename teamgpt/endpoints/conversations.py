@@ -10,6 +10,7 @@ from fastapi_pagination import Page
 from sse_starlette import EventSourceResponse
 from starlette.status import HTTP_204_NO_CONTENT
 
+from teamgpt.endpoints.stripe import org_payment_plan
 from teamgpt.enums import GptModel, ContentType, AutherUser, GptKeySource
 from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey, GptChatMessage
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
@@ -113,6 +114,9 @@ async def create_conversations_message(
     # 查询gpt-key配置信息,判断是否是系统的
     key = ''
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
+    plan_info = await org_payment_plan(org_info)
+    if plan_info.is_send_msg is False:
+        raise HTTPException(status_code=420, detail='Not allowed to send messages')
     if org_info is None:
         raise HTTPException(status_code=404, detail='Organization not found')
     if org_info.gpt_key_source is GptKeySource.SYSTEM:
