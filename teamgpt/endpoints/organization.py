@@ -7,6 +7,7 @@ from fastapi_auth0 import Auth0User
 from fastapi_pagination import Page
 from fastapi_pagination.ext.tortoise import paginate as _tortoise_paginate
 
+from teamgpt.endpoints.stripe import org_payment_plan
 from teamgpt.enums import Role, GptKeySource
 from teamgpt.models import Organization, User, UserOrganization, GptTopic, GptPrompt
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
@@ -277,6 +278,10 @@ async def invite_user_to_organization(
     create_user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     user_info = await User.get_or_none(email=email, deleted_at__isnull=True)
     org_obj = await Organization.get_or_none(id=org_id, deleted_at__isnull=True)
+    org_payment_plan_info = await org_payment_plan(org_id)
+    if org_payment_plan_info.is_join is False:
+        raise HTTPException(
+            status_code=421, detail='Organization not allow join')
     if not org_obj:
         raise HTTPException(
             status_code=404, detail='Organization not found')
