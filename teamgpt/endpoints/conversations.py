@@ -1,20 +1,20 @@
 import json
 import time
 import uuid
+from typing import Union
 
 import openai
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
+from fastapi_auth0 import Auth0User
 from fastapi_pagination import Page
 from sse_starlette import EventSourceResponse
 from starlette.status import HTTP_204_NO_CONTENT
-from typing import Union
 
 from teamgpt.enums import GptModel, ContentType, AutherUser, GptKeySource
 from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey, GptChatMessage
+from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
 from teamgpt.settings import (auth)
-from fastapi_auth0 import Auth0User
-from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num
 
 router = APIRouter(prefix='/api/v1/conversations', tags=['Conversations'])
@@ -118,12 +118,12 @@ async def create_conversations_message(
     if org_info.gpt_key_source is GptKeySource.SYSTEM:
         sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
         if sys_gpt_key is None:
-            raise HTTPException(status_code=404, detail='SYS GPT key not found')
+            raise HTTPException(status_code=423, detail='SYS GPT key not found')
         key = sys_gpt_key.key
     else:
         gpt_key = await GPTKey.get_or_none(organization_id=organization_id, deleted_at__isnull=True)
         if gpt_key is None:
-            raise HTTPException(status_code=404, detail='GPT key not found')
+            raise HTTPException(status_code=423, detail='GPT key not found')
         key = gpt_key.key
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     message_log = []
