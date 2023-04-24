@@ -68,7 +68,6 @@ async def del_conversations(
     await con_obj.soft_delete()
 
 
-# edit conversations
 @router.put('/{organization_id}/{conversations_id}', response_model=ConversationsOut,
             dependencies=[Depends(auth.implicit_scheme)])
 async def edit_conversations(
