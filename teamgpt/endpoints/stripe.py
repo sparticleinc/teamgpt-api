@@ -219,6 +219,11 @@ async def webhook(request: Request):
 # 判断组织属性,是否在试用期,是否过期,和付费计划
 async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
     out = OrgPaymentPlanOut()
+    if org_obj.super is True:
+        out.is_join = True
+        out.is_super = True
+        out.is_send_msg = True
+        return out
     # 查询组织是否有付费计划
     obj = await StripePayments.filter(organization_id=org_obj.id, deleted_at__isnull=True,
                                       type='payment_intent.succeeded').prefetch_related(

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role, ContentType, AutherUser, GptModel, GptKeySource, Belong
+from teamgpt.enums import Role, ContentType, AutherUser, GptModel
 
 
 class AbstractBaseModel(models.Model):
@@ -57,7 +57,7 @@ class Organization(AbstractBaseModelWithDeletedAt):
     gpt_key_source = fields.CharField(max_length=255, null=True)
     code = fields.CharField(max_length=255, null=True)
     code_expiration_time = fields.DatetimeField(null=True)
-
+    super = fields.BooleanField(default=False, null=True)
     users = fields.ManyToManyField('models.User', related_name='organizations')
 
     gpt_keys: fields.ReverseRelation['GPTKey']

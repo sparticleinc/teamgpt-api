@@ -294,6 +294,7 @@ class StripeCheckoutIn(BaseModel):
 
 
 class OrgPaymentPlanOut(BaseModel):
+    is_super: Optional[bool] = False
     is_plan: Optional[bool] = False
     plan_max_number: Optional[int] = 0
     plan_remaining_number: Optional[int] = 0
