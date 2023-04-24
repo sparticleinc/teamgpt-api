@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from fastapi_auth0 import Auth0User
 from starlette.status import HTTP_204_NO_CONTENT
 
+from teamgpt.endpoints.stripe import org_payment_plan
 from teamgpt.models import User, UserOrganization, Organization
 from teamgpt.schemata import UserOut
 from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
@@ -58,7 +59,8 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
         if org_obj is not None:
             user_org = await UserOrganization.get_or_none(user_id=user_obj.id,
                                                           organization_id=org_obj.id, deleted_at__isnull=True)
-            if user_org is None:
+            plan_info = await org_payment_plan(org_obj.id)
+            if user_org is None and plan_info.is_join is True:
                 await UserOrganization.create(user_id=user_obj.id, organization_id=org_obj.id, role='member')
     return await UserOut.from_tortoise_orm(user_obj)
 
