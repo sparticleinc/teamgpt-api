@@ -62,8 +62,6 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
             plan_info = await org_payment_plan(org_obj)
             if user_org is None and plan_info.is_join is True:
                 await UserOrganization.create(user_id=user_obj.id, organization_id=org_obj.id, role='member')
-        else:
-            raise HTTPException(status_code=422, detail="Code expire")
     return await UserOut.from_tortoise_orm(user_obj)
 
 
