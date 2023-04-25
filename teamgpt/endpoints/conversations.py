@@ -111,7 +111,7 @@ async def create_conversations_message(
         context_number: Union[int, None] = Query(default=5),
         user: Auth0User = Security(auth.get_user)
 ):
-    # 查询gpt-key配置信息,判断是否是系统的
+    # 查询gpt-key配置信息,判断是否是系统
     key = ''
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
     plan_info = await org_payment_plan(org_info)
