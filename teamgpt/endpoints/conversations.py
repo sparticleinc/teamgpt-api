@@ -133,7 +133,13 @@ async def create_conversations_message(
                     raise HTTPException(status_code=423, detail='SYS GPT key not found')
                 key = sys_gpt_key.key
             else:
-                raise HTTPException(status_code=423, detail='GPT key not found')
+                if plan_info.is_try:
+                    sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
+                    if sys_gpt_key is None:
+                        raise HTTPException(status_code=423, detail='SYS GPT key not found')
+                    key = sys_gpt_key.key
+                else:
+                    raise HTTPException(status_code=423, detail='GPT key not found')
         else:
             key = gpt_key.key
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
