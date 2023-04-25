@@ -11,6 +11,23 @@ UserOut = pydantic_model_creator(
     name='UserOut',
 )
 
+
+class UserToOut(BaseModel):
+    id: uuid.UUID
+    user_id: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    picture: Optional[str] = None
+    locale: Optional[str] = None
+    nickname: Optional[str] = None
+    current_organization: Optional[str] = None
+    super: Optional[bool] = None
+    join_sta: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
 OrganizationOut = pydantic_model_creator(
     models.Organization,
     name='OrganizationOut',
@@ -304,3 +321,7 @@ class OrgPaymentPlanOut(BaseModel):
     expiration_time: Optional[str] = None
     is_send_msg: Optional[bool] = False
     sys_token: Optional[bool] = False
+
+
+class PaymentPlanInt(BaseModel):
+    organization_id: Optional[str] = None

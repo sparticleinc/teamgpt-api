@@ -9,7 +9,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from teamgpt.endpoints.stripe import org_payment_plan
 from teamgpt.models import User, UserOrganization, Organization
-from teamgpt.schemata import UserOut
+from teamgpt.schemata import UserToOut
 from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
                               AUTHORIZATION_URL, LOGOUT_URL, auth)
 from teamgpt.util.auth0 import get_user_info
@@ -40,11 +40,12 @@ def do_logout(url: Optional[str] = None):
 
 @router.get(
     '/users/me',
-    response_model=UserOut,
+    response_model=UserToOut,
     dependencies=[Depends(auth.implicit_scheme)]
 )
 async def get_current_user(user: Auth0User = Security(auth.get_user), code: Optional[str] = None):
     auth_user = await get_user_info(user.id)
+    join_sta = ''
     user_obj = await User.get_or_none(email=auth_user['email'])
     if user_obj:
         await User.filter(id=user_obj.id).update(user_id=user.id, name=auth_user['name'],
@@ -61,8 +62,17 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
                                                           organization_id=org_obj.id, deleted_at__isnull=True)
             plan_info = await org_payment_plan(org_obj)
             if user_org is None and plan_info.is_join is True:
+                join_sta = 'success'
                 await UserOrganization.create(user_id=user_obj.id, organization_id=org_obj.id, role='member')
-    return await UserOut.from_tortoise_orm(user_obj)
+            else:
+                join_sta = 'join_error'
+        else:
+            join_sta = 'code_error'
+    else:
+        join_sta = 'no_code'
+    user_out = UserToOut.from_orm(user_obj)
+    user_out.join_sta = join_sta
+    return user_out
 
 
 # 用户绑定当前所在组织
