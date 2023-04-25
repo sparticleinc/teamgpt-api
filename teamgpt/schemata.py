@@ -11,6 +11,23 @@ UserOut = pydantic_model_creator(
     name='UserOut',
 )
 
+
+class UserToOut(BaseModel):
+    id: uuid.UUID
+    user_id: Optional[str] = None
+    email: Optional[str] = None
+    name: Optional[str] = None
+    picture: Optional[str] = None
+    locale: Optional[str] = None
+    nickname: Optional[str] = None
+    current_organization: Optional[str] = None
+    super: Optional[str] = None
+    join_sta: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+
 OrganizationOut = pydantic_model_creator(
     models.Organization,
     name='OrganizationOut',
