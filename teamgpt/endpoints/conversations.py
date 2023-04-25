@@ -126,7 +126,6 @@ async def create_conversations_message(
         key = sys_gpt_key.key
     else:
         gpt_key = await GPTKey.get_or_none(organization_id=organization_id, deleted_at__isnull=True)
-        key = gpt_key.key
         if gpt_key is None:
             if plan_info.sys_token is True:
                 sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
