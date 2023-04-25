@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta
+from typing import Union
 
 import pytz
 import stripe
@@ -8,7 +9,7 @@ from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
 from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User, UserOrganization
-from teamgpt.schemata import StripeProductsOut, OrgPaymentPlanOut
+from teamgpt.schemata import StripeProductsOut, OrgPaymentPlanOut, PaymentPlanInt
 from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
 
 router = APIRouter(prefix='/api/v1/stripe', tags=['Stripe'])
@@ -260,9 +261,13 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
     return out
 
 
-@router.get("/payment/{organization_id}",
-            response_model=OrgPaymentPlanOut,
-            )
-async def payment_plan(organization_id: str, user: Auth0User = Security(auth.get_user)):
-    org_obj = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
+@router.post("/payment",
+             response_model=OrgPaymentPlanOut,
+             )
+async def payment_plan(org_input: Union[PaymentPlanInt] = None, user: Auth0User = Security(auth.get_user)):
+    if org_input is None:
+        user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+        org_obj = await Organization.get_or_none(id=user_info.current_organization, deleted_at__isnull=True)
+    else:
+        org_obj = await Organization.get_or_none(id=org_input.organization_id, deleted_at__isnull=True)
     return await org_payment_plan(org_obj)
