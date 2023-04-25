@@ -111,7 +111,7 @@ async def create_conversations_message(
         context_number: Union[int, None] = Query(default=5),
         user: Auth0User = Security(auth.get_user)
 ):
-    # 查询gpt-key配置信息,判断是否是系统的
+    # 查询gpt-key配置信息,判断是否是系统用户
     key = ''
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
     plan_info = await org_payment_plan(org_info)
@@ -126,7 +126,6 @@ async def create_conversations_message(
         key = sys_gpt_key.key
     else:
         gpt_key = await GPTKey.get_or_none(organization_id=organization_id, deleted_at__isnull=True)
-        key = gpt_key.key
         if gpt_key is None:
             if plan_info.sys_token is True:
                 sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
@@ -134,7 +133,15 @@ async def create_conversations_message(
                     raise HTTPException(status_code=423, detail='SYS GPT key not found')
                 key = sys_gpt_key.key
             else:
-                raise HTTPException(status_code=423, detail='GPT key not found')
+                if plan_info.is_try:
+                    sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
+                    if sys_gpt_key is None:
+                        raise HTTPException(status_code=423, detail='SYS GPT key not found')
+                    key = sys_gpt_key.key
+                else:
+                    raise HTTPException(status_code=423, detail='GPT key not found')
+        else:
+            key = gpt_key.key
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     message_log = []
     # 判断是否存在会话,没有先创建会话
