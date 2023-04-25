@@ -46,7 +46,7 @@ def do_logout(url: Optional[str] = None):
 async def get_current_user(user: Auth0User = Security(auth.get_user), code: Optional[str] = None):
     auth_user = await get_user_info(user.id)
     join_sta = ''
-    user_obj = await User.get_or_none(email=auth_user['email'])
+    user_obj = await User.get_or_none(user_id=user.id)
     if user_obj is None:
         user_obj = await User.create(**auth_user)
         # # 创建默认组织
