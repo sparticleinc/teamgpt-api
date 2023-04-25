@@ -266,6 +266,8 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
 async def payment_plan(org_input: Union[PaymentPlanInt] = None, user: Auth0User = Security(auth.get_user)):
     if org_input is None:
         user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+        if user_info is None:
+            return None
         if user_info.current_organization is None or user_info.current_organization is '':
             return None
         org_obj = await Organization.get_or_none(id=user_info.current_organization, deleted_at__isnull=True)
