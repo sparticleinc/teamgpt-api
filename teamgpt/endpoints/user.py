@@ -47,12 +47,7 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
     auth_user = await get_user_info(user.id)
     join_sta = ''
     user_obj = await User.get_or_none(email=auth_user['email'])
-    if user_obj:
-        await User.filter(id=user_obj.id).update(user_id=user.id, name=auth_user['name'],
-                                                 picture=auth_user['picture'],
-                                                 nickname=auth_user['nickname'])
-        user_obj = await User.get_or_none(email=auth_user['email'])
-    else:
+    if user_obj is None:
         user_obj = await User.create(**auth_user)
         # # 创建默认组织
         # org_name = auth_user['nickname'] + '_' + random_run.number(4)
@@ -75,7 +70,7 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
                 await UserOrganization.create(user_id=user_obj.id, organization_id=org_obj.id, role='member')
                 await User.filter(id=user_obj.id).update(current_organization=org_obj.id)
             else:
-                join_sta = 'join_error'
+                join_sta = ''
         else:
             join_sta = 'code_error'
     else:
