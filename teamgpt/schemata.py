@@ -21,7 +21,7 @@ class UserToOut(BaseModel):
     locale: Optional[str] = None
     nickname: Optional[str] = None
     current_organization: Optional[str] = None
-    super: Optional[str] = None
+    super: Optional[bool] = None
     join_sta: Optional[str] = None
 
     class Config:
@@ -321,3 +321,7 @@ class OrgPaymentPlanOut(BaseModel):
     expiration_time: Optional[str] = None
     is_send_msg: Optional[bool] = False
     sys_token: Optional[bool] = False
+
+
+class PaymentPlanInt(BaseModel):
+    organization_id: Optional[str] = None
