@@ -13,7 +13,6 @@ from teamgpt.schemata import UserToOut
 from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
                               AUTHORIZATION_URL, LOGOUT_URL, auth)
 from teamgpt.util.auth0 import get_user_info
-from teamgpt.util.random_run import number
 
 router = APIRouter(prefix='/api/v1', tags=['Users'])
 
@@ -55,12 +54,6 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
         user_obj = await User.get_or_none(email=auth_user['email'])
     else:
         user_obj = await User.create(**auth_user)
-        # 创建默认组织
-        org_name = auth_user['nickname'] + '_' + number(4)
-        org_obj = await Organization.create(name=org_name, deleted_at__isnull=True,
-                                            defaults={'picture': '',
-                                                      'creator': user_obj,
-                                                      'gpt_key_source': ''})
     if code is not None:
         org_obj = await Organization.get_or_none(code=code, deleted_at__isnull=True,
                                                  code_expiration_time__gt=datetime.now())
