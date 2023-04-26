@@ -321,7 +321,7 @@ class StripeProducts(AbstractBaseModelWithDeletedAt):
     sys_token = fields.BooleanField(null=True, default=False)
     api_id = fields.CharField(max_length=255, null=True)
     order = fields.IntField(null=True, default=0)
-    set_month = fields.IntField(null=True, default=0)
+    month = fields.IntField(null=True, default=0)
 
 
 class StripePayments(AbstractBaseModelWithDeletedAt):
