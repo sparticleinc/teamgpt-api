@@ -235,16 +235,19 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
                                           type='customer.subscription.deleted').prefetch_related(
             'stripe_products').order_by('-created_at').first()
         if obj is not None:
+            products_obj = await StripeProducts.filter(id=obj.stripe_products_id).first()
+            days = products_obj.month * 30
             created_at_utc = obj.created_at.astimezone(pytz.utc)
-            out.expiration_time = str(created_at_utc + timedelta(days=30))
+            out.expiration_time = str(created_at_utc + timedelta(days=days))
             # 比较时间戳
-            if created_at_utc + timedelta(days=30) < datetime.now(pytz.timezone('UTC')):
+            if created_at_utc + timedelta(days=days) < datetime.now(pytz.timezone('UTC')):
                 obj = None
     if obj:
-        out.expiration_time = str(obj.created_at.astimezone(pytz.utc) + timedelta(days=30))
-        out.is_send_msg = True
         # 查看已经有多少人了,使用了是什么套餐
         products_obj = await StripeProducts.filter(id=obj.stripe_products_id).first()
+        days = products_obj.month * 30
+        out.expiration_time = str(obj.created_at.astimezone(pytz.utc) + timedelta(days=days))
+        out.is_send_msg = True
         if products_obj is None:
             return out
         out.is_plan = True
