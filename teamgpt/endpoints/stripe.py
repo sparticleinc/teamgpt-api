@@ -234,11 +234,12 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
         obj = await StripePayments.filter(organization_id=org_obj.id, deleted_at__isnull=True,
                                           type='customer.subscription.deleted').prefetch_related(
             'stripe_products').order_by('-created_at').first()
-        created_at_utc = obj.created_at.astimezone(pytz.utc)
-        out.expiration_time = str(created_at_utc + timedelta(days=30))
-        # 比较时间戳
-        if created_at_utc + timedelta(days=30) < datetime.now(pytz.timezone('UTC')):
-            obj = None
+        if obj is not None:
+            created_at_utc = obj.created_at.astimezone(pytz.utc)
+            out.expiration_time = str(created_at_utc + timedelta(days=30))
+            # 比较时间戳
+            if created_at_utc + timedelta(days=30) < datetime.now(pytz.timezone('UTC')):
+                obj = None
     if obj:
         out.expiration_time = str(obj.created_at.astimezone(pytz.utc) + timedelta(days=30))
         out.is_send_msg = True
