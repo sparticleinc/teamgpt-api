@@ -98,6 +98,10 @@ async def get_my_organizations(
         if origin == '':
             origin = DOMAIN
         stripe.api_key = STRIPE_API_KEY
+        # 查询付费计划
+        product = await StripeProducts.filter(api_id=api_id, deleted_at__isnull=True).first()
+        if product is None:
+            raise HTTPException(status_code=404, detail="Product not found")
         checkout_session = stripe.checkout.Session.create(
             line_items=[
                 {
@@ -105,7 +109,7 @@ async def get_my_organizations(
                     'quantity': 1,
                 },
             ],
-            mode='subscription',
+            mode=product.mode.value,
             success_url=origin,
             cancel_url=origin,
             metadata={

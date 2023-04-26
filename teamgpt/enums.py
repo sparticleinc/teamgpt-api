@@ -34,3 +34,8 @@ class Belong(str, Enum):
     ORG = 'org'
     OWN = 'own'
     PUBLIC = 'public'
+
+
+class StripeModel(str, Enum):
+    PAYMENT = 'payment'
+    SUBSCRIPTION = 'subscription'
