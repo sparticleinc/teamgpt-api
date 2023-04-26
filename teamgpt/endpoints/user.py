@@ -70,7 +70,7 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
                 await UserOrganization.create(user_id=user_obj.id, organization_id=org_obj.id, role='member')
                 await User.filter(id=user_obj.id).update(current_organization=org_obj.id)
             else:
-                join_sta = ''
+                join_sta = 'maximum'
         else:
             join_sta = 'code_error'
     else:
