@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime, timedelta
 
@@ -90,7 +91,7 @@ async def create_organization(
             status_code=400, detail='Organization name already exists')
     await UserOrganization.create(user=user_info, organization_id=new_org_obj.id, role=Role.CREATOR)
     # 插入系统的aiprm
-    await update_organization_id(new_org_obj.id)
+    asyncio.create_task(update_organization_id(new_org_obj.id))
     return await OrganizationOut.from_tortoise_orm(new_org_obj)
 
 
