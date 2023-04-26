@@ -230,8 +230,17 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
                                       type='payment_intent.succeeded').prefetch_related(
         'stripe_products').order_by('-created_at').first()
     org_user_number = await UserOrganization.filter(organization_id=org_obj.id, deleted_at__isnull=True).count()
-
+    if obj is None:
+        obj = await StripePayments.filter(organization_id=org_obj.id, deleted_at__isnull=True,
+                                          type='customer.subscription.deleted').prefetch_related(
+            'stripe_products').order_by('-created_at').first()
+        created_at_utc = obj.created_at.astimezone(pytz.utc)
+        out.expiration_time = str(created_at_utc + timedelta(days=30))
+        # 比较时间戳
+        if created_at_utc + timedelta(days=30) < datetime.now(pytz.timezone('UTC')):
+            obj = None
     if obj:
+        out.expiration_time = str(obj.created_at.astimezone(pytz.utc) + timedelta(days=30))
         out.is_send_msg = True
         # 查看已经有多少人了,使用了是什么套餐
         products_obj = await StripeProducts.filter(id=obj.stripe_products_id).first()
@@ -245,6 +254,8 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
             out.is_join = True
             return out
         return out
+    # 查询是否有退订的,还没过期的套餐
+
     # 查询组织是否在试用期
     out.is_try = True
     created_at_utc = org_obj.created_at.astimezone(pytz.utc)
