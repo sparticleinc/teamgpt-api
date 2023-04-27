@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime, timedelta
 from typing import Union
 
@@ -57,18 +56,26 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
         sub_info = stripe.Subscription.retrieve(
             obj.sub_id,
         )
-        product_info = stripe.Product.retrieve(
-            sub_info['plan']['product'],
-        )
-        req_obj['sub_info'] = sub_info
-        req_obj['product_info'] = product_info
-    if obj.mode == StripeModel.PAYMENT:
-        timestamp = int(time.mktime(product.created_at.timetuple()))
-        req_obj['sub_info'] = {
-            'current_period_start': timestamp,
-            'current_period_end': timestamp + 86400 * (product.month * 30),
-        }
 
+        req_obj['sub_info'] = sub_info
+    if obj.mode == StripeModel.PAYMENT:
+        pay_info = stripe.PaymentIntent.retrieve(
+            obj.payment_id
+        )
+        if pay_info is not None:
+            req_obj['sub_info'] = {
+                'current_period_start': pay_info.created,
+                'current_period_end': pay_info.created + 86400 * (product.month * 30),
+            }
+        if obj.type == 'checkout.session.completed':
+            req_obj['sub_info']['status'] = 'success'
+        elif obj.type == 'canceled':
+            req_obj['sub_info']['status'] = 'canceled'
+    if product.product is not None:
+        product_info = stripe.Product.retrieve(
+            product.product,
+        )
+        req_obj['product_info'] = product_info
     if product is not None:
         req_obj['product_info']['order'] = product.order
 
@@ -87,15 +94,20 @@ async def cancel_pay(organization_id: str, user: Auth0User = Security(auth.get_u
     if org_obj is None:
         raise HTTPException(status_code=404, detail="Organization not found")
     obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True,
-                                      type='payment_intent.succeeded').prefetch_related(
-        'stripe_products').get_or_none()
+                                      type__in=['payment_intent.succeeded',
+                                                'checkout.session.completed']).prefetch_related(
+        'stripe_products').order_by('-created_at').first()
     if obj is None:
         raise HTTPException(status_code=404, detail="Payment not found")
     stripe.api_key = STRIPE_API_KEY
-    sub_info = stripe.Subscription.delete(
-        obj.sub_id,
-    )
-    return sub_info
+    if obj.mode == StripeModel.SUBSCRIPTION:
+        sub_info = stripe.Subscription.delete(
+            obj.sub_id,
+        )
+        return sub_info
+    if obj.mode == StripeModel.PAYMENT:
+        await StripePayments.filter(id=obj.id).update(type='canceled')
+        return None
 
 
 @router.get(
@@ -253,7 +265,8 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
         return out
     # 查询组织是否有付费计划
     obj = await StripePayments.filter(organization_id=org_obj.id, deleted_at__isnull=True,
-                                      type='payment_intent.succeeded').prefetch_related(
+                                      type__in=['payment_intent.succeeded',
+                                                'checkout.session.completed', 'canceled']).prefetch_related(
         'stripe_products').order_by('-created_at').first()
     org_user_number = await UserOrganization.filter(organization_id=org_obj.id, deleted_at__isnull=True).count()
     if obj is None:
