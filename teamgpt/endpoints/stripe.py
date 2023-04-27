@@ -8,6 +8,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends, Security
 from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
+from teamgpt.enums import StripeModel
 from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User, UserOrganization
 from teamgpt.schemata import StripeProductsOut, OrgPaymentPlanOut, PaymentPlanInt
 from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
@@ -46,19 +47,22 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
     stripe.api_key = STRIPE_API_KEY
     if obj is None:
         return None
-    sub_info = stripe.Subscription.retrieve(
-        obj.sub_id,
-    )
-    product_info = stripe.Product.retrieve(
-        sub_info['plan']['product'],
-    )
     # 取出obj到新的对象,并且增加sub_info
     req_obj = dict(obj)
-    req_obj['sub_info'] = sub_info
-    req_obj['product_info'] = product_info
-    product = await StripeProducts.filter(api_id=product_info['default_price']).first()
+    if obj.mode == StripeModel.SUBSCRIPTION:
+        sub_info = stripe.Subscription.retrieve(
+            obj.sub_id,
+        )
+        product_info = stripe.Product.retrieve(
+            sub_info['plan']['product'],
+        )
+        req_obj['sub_info'] = sub_info
+        req_obj['product_info'] = product_info
+
+    product = await StripeProducts.filter(api_id=obj.api_id).first()
     if product is not None:
-        req_obj['product_info']['order'] = product.order
+        req_obj['order'] = product.order
+    
     if req_obj is None:
         return None
     return req_obj
@@ -114,7 +118,9 @@ async def get_my_organizations(
             cancel_url=origin,
             metadata={
                 'organization_id': organization_id,
-                'origin': origin
+                'origin': origin,
+                'api_id': api_id,
+                'mode': product.mode.value,
             }
         )
         return RedirectResponse(url=checkout_session.url, status_code=303)
@@ -192,18 +198,23 @@ async def webhook(request: Request):
             await StripePayments.filter(
                 invoice=invoice,
             ).update(stripe_products_id=product_obj.id, type='payment_intent.succeeded',
-                     sub_id=lines.data[0]['subscription'],
-                     api_id=lines.data[0]['plan']['id'])
+                     sub_id=lines.data[0]['subscription'])
         elif event_type == "checkout.session.completed":
             # Checkout 支付已完成
             checkout_id = event.data.object.id
             organization_id = metadata.get("organization_id")
+            api_id = metadata.get("api_id")
+            mode = metadata.get("mode")
             invoice = event.data.object.get("invoice")
             payment_id = event.data.object.get("payment_intent")
+            stripe_products_obj = await StripeProducts.filter(api_id=api_id).first()
             await StripePayments.create(
                 type='checkout.session.completed',
+                stripe_products_id=stripe_products_obj.id,
                 invoice=invoice,
                 payment_id=payment_id,
+                api_id=api_id,
+                mode=mode,
                 organization_id=organization_id,
                 customer_details=json.dumps(event.data.object.get("customer_details")),
             )
