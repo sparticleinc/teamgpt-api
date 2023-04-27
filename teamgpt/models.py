@@ -323,6 +323,7 @@ class StripeProducts(AbstractBaseModelWithDeletedAt):
     order = fields.IntField(null=True, default=0)
     month = fields.IntField(null=True, default=0)
     mode = fields.CharEnumField(StripeModel, null=True, default=StripeModel.SUBSCRIPTION)
+    product = fields.CharField(max_length=255, null=True)
 
 
 class StripePayments(AbstractBaseModelWithDeletedAt):

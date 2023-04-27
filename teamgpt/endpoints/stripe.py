@@ -57,18 +57,19 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
         sub_info = stripe.Subscription.retrieve(
             obj.sub_id,
         )
-        product_info = stripe.Product.retrieve(
-            sub_info['plan']['product'],
-        )
+
         req_obj['sub_info'] = sub_info
-        req_obj['product_info'] = product_info
     if obj.mode == StripeModel.PAYMENT:
         timestamp = int(time.mktime(product.created_at.timetuple()))
         req_obj['sub_info'] = {
             'current_period_start': timestamp,
             'current_period_end': timestamp + 86400 * (product.month * 30),
         }
-
+    if product.product is not None:
+        product_info = stripe.Product.retrieve(
+            product.product,
+        )
+        req_obj['product_info'] = product_info
     if product is not None:
         req_obj['product_info']['order'] = product.order
 
