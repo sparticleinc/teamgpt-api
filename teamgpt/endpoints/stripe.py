@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime, timedelta
 from typing import Union
 
@@ -60,11 +59,14 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
 
         req_obj['sub_info'] = sub_info
     if obj.mode == StripeModel.PAYMENT:
-        timestamp = int(time.mktime(product.created_at.timetuple()))
-        req_obj['sub_info'] = {
-            'current_period_start': timestamp,
-            'current_period_end': timestamp + 86400 * (product.month * 30),
-        }
+        pay_info = stripe.PaymentIntent.retrieve(
+            obj.payment_id
+        )
+        if pay_info is not None:
+            req_obj['sub_info'] = {
+                'current_period_start': pay_info.created,
+                'current_period_end': pay_info.created + 86400 * (product.month * 30),
+            }
         if obj.type == 'checkout.session.completed':
             req_obj['sub_info']['status'] = 'success'
         elif obj.type == 'canceled':
