@@ -104,7 +104,7 @@ async def cancel_pay(organization_id: str, user: Auth0User = Security(auth.get_u
         )
         return sub_info
     if obj.mode == StripeModel.PAYMENT:
-        await obj.update(type='canceled')
+        await StripePayments.filter(id=obj.id).update(type='canceled')
         return None
 
 
@@ -264,7 +264,7 @@ async def org_payment_plan(org_obj: Organization) -> OrgPaymentPlanOut:
     # 查询组织是否有付费计划
     obj = await StripePayments.filter(organization_id=org_obj.id, deleted_at__isnull=True,
                                       type__in=['payment_intent.succeeded',
-                                                'checkout.session.completed']).prefetch_related(
+                                                'checkout.session.completed', 'canceled']).prefetch_related(
         'stripe_products').order_by('-created_at').first()
     org_user_number = await UserOrganization.filter(organization_id=org_obj.id, deleted_at__isnull=True).count()
     if obj is None:
