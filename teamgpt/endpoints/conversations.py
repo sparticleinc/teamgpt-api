@@ -2,7 +2,6 @@ import json
 import time
 import uuid
 from typing import Union
-
 import openai
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
 from fastapi_auth0 import Auth0User
@@ -16,6 +15,7 @@ from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Or
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
 from teamgpt.settings import (auth)
+from teamgpt.util.entity_detector import EntityDetector
 from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num
 
 router = APIRouter(prefix='/api/v1/conversations', tags=['Conversations'])
@@ -27,7 +27,8 @@ async def test(key: str):
         openai.api_key = key
         async for chunk_msg in await openai.ChatCompletion.acreate(
                 model='gpt-3.5-turbo',
-                messages=[{"role": "user", "content": "hello"}, {"role": "system", "content": "You're a chat robot"}],
+                messages=[{"role": "user", "content": "hello"}, {
+                    "role": "system", "content": "You're a chat robot"}],
                 stream=True
         ):
             if 'content' in chunk_msg['choices'][0]['delta']:
@@ -95,7 +96,8 @@ async def get_conversations(
         params: ListAPIParams = Depends()
 ):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
-    con_org = Conversations.filter(user=user_info, organization_id=organization_id, deleted_at__isnull=True)
+    con_org = Conversations.filter(
+        user=user_info, organization_id=organization_id, deleted_at__isnull=True)
     return await tortoise_paginate(con_org, params)
 
 
@@ -116,13 +118,15 @@ async def create_conversations_message(
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
     plan_info = await org_payment_plan(org_info)
     if plan_info.is_send_msg is False:
-        raise HTTPException(status_code=420, detail='Not allowed to send messages')
+        raise HTTPException(
+            status_code=420, detail='Not allowed to send messages')
     if org_info is None:
         raise HTTPException(status_code=404, detail='Organization not found')
     if org_info.gpt_key_source is GptKeySource.SYSTEM:
         sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
         if sys_gpt_key is None:
-            raise HTTPException(status_code=423, detail='SYS GPT key not found')
+            raise HTTPException(
+                status_code=423, detail='SYS GPT key not found')
         key = sys_gpt_key.key
     else:
         gpt_key = await GPTKey.get_or_none(organization_id=organization_id, deleted_at__isnull=True)
@@ -130,16 +134,19 @@ async def create_conversations_message(
             if plan_info.sys_token is True:
                 sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
                 if sys_gpt_key is None:
-                    raise HTTPException(status_code=423, detail='SYS GPT key not found')
+                    raise HTTPException(
+                        status_code=423, detail='SYS GPT key not found')
                 key = sys_gpt_key.key
             else:
                 if plan_info.is_try:
                     sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
                     if sys_gpt_key is None:
-                        raise HTTPException(status_code=423, detail='SYS GPT key not found')
+                        raise HTTPException(
+                            status_code=423, detail='SYS GPT key not found')
                     key = sys_gpt_key.key
                 else:
-                    raise HTTPException(status_code=423, detail='GPT key not found')
+                    raise HTTPException(
+                        status_code=423, detail='GPT key not found')
         else:
             key = gpt_key.key
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
@@ -153,11 +160,13 @@ async def create_conversations_message(
                                                  model=model)
             conversation_id = new_obj.id
         else:
-            raise HTTPException(status_code=400, detail='Conversation format error')
+            raise HTTPException(
+                status_code=400, detail='Conversation format error')
     else:
         con_obj = await Conversations.get_or_none(id=conversation_id, deleted_at__isnull=True)
         if con_obj is None:
-            raise HTTPException(status_code=404, detail='Conversation not found')
+            raise HTTPException(
+                status_code=404, detail='Conversation not found')
         model = con_obj.model
 
     # 循环消息插入数据库
@@ -182,8 +191,13 @@ async def create_conversations_message(
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversation_id,
                                                 deleted_at__isnull=True).order_by('-created_at').limit(context_number)
+    detector = EntityDetector()
+
     for con in con_org:
-        message_log.append({'role': con.author_user, 'content': con.message})
+        detector.detect_entities(con.message)
+        detector.map_items()
+        content = detector.redact(con.message)
+        message_log.append({'role': con.author_user, 'content': content})
     # 发送sse请求数据
     start_time = int(time.time())
 
@@ -197,6 +211,8 @@ async def create_conversations_message(
             event_data = json.loads(event['data'])
             if event_data['sta'] == 'run':
                 message = message + event_data['message']
+                message = detector.unredact(message)
+
                 if new_msg_obj_id == '':
                     new_msg_obj = await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
                                                                     message=message,
@@ -207,6 +223,7 @@ async def create_conversations_message(
                                                                     )
                     new_msg_obj_id = str(new_msg_obj.id)
                 event_data['msg_id'] = new_msg_obj_id
+                event_data['sensitive_items'] = detector.entity_name_map
                 event['data'] = json.dumps(event_data)
                 yield event
             else:
@@ -225,6 +242,7 @@ async def create_conversations_message(
                                             organization_id=org_info.id, conversation_id=conversation_id, )
                 yield event
                 await agen.aclose()
+                detector.clear_values()
 
     return EventSourceResponse(send_gpt())
 
