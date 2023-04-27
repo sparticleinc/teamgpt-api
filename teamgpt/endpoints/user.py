@@ -49,7 +49,6 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
     user_obj = await User.get_or_none(user_id=user.id)
     if user_obj is None:
         user_obj = await User.create(**auth_user)
-        # # 创建默认组织
         # org_name = auth_user['nickname'] + '_' + random_run.number(4)
         # org_obj = await Organization.create(name=org_name, deleted_at__isnull=True,
         #                                     defaults={'picture': '',
