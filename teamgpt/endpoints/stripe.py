@@ -65,6 +65,10 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
             'current_period_start': timestamp,
             'current_period_end': timestamp + 86400 * (product.month * 30),
         }
+        if obj.type == 'checkout.session.completed':
+            req_obj['sub_info']['status'] = 'success'
+        elif obj.type == 'canceled':
+            req_obj['sub_info']['status'] = 'canceled'
     if product.product is not None:
         product_info = stripe.Product.retrieve(
             product.product,
@@ -88,15 +92,20 @@ async def cancel_pay(organization_id: str, user: Auth0User = Security(auth.get_u
     if org_obj is None:
         raise HTTPException(status_code=404, detail="Organization not found")
     obj = await StripePayments.filter(organization_id=organization_id, deleted_at__isnull=True,
-                                      type='payment_intent.succeeded').prefetch_related(
-        'stripe_products').get_or_none()
+                                      type__in=['payment_intent.succeeded',
+                                                'checkout.session.completed']).prefetch_related(
+        'stripe_products').order_by('-created_at').first()
     if obj is None:
         raise HTTPException(status_code=404, detail="Payment not found")
     stripe.api_key = STRIPE_API_KEY
-    sub_info = stripe.Subscription.delete(
-        obj.sub_id,
-    )
-    return sub_info
+    if obj.mode == StripeModel.SUBSCRIPTION:
+        sub_info = stripe.Subscription.delete(
+            obj.sub_id,
+        )
+        return sub_info
+    if obj.mode == StripeModel.PAYMENT:
+        await obj.update(type='canceled')
+        return None
 
 
 @router.get(
