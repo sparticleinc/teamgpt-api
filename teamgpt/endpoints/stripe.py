@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import datetime, timedelta
 from typing import Union
 
@@ -49,6 +50,9 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
         return None
     # 取出obj到新的对象,并且增加sub_info
     req_obj = dict(obj)
+    req_obj['product_info'] = {}
+    product = await StripeProducts.filter(api_id=obj.api_id).first()
+
     if obj.mode == StripeModel.SUBSCRIPTION:
         sub_info = stripe.Subscription.retrieve(
             obj.sub_id,
@@ -58,11 +62,16 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
         )
         req_obj['sub_info'] = sub_info
         req_obj['product_info'] = product_info
+    if obj.mode == StripeModel.PAYMENT:
+        timestamp = int(time.mktime(product.created_at.timetuple()))
+        req_obj['sub_info'] = {
+            'current_period_start': timestamp,
+            'current_period_end': timestamp + 86400 * (product.month * 30),
+        }
 
-    product = await StripeProducts.filter(api_id=obj.api_id).first()
     if product is not None:
-        req_obj['order'] = product.order
-    
+        req_obj['product_info']['order'] = product.order
+
     if req_obj is None:
         return None
     return req_obj
