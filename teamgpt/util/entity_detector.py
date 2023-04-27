@@ -1,23 +1,33 @@
 import uuid
-import en_core_web_sm
-import zh_core_web_sm
-import ja_core_news_sm
+import re
+import en_core_web_trf
+import zh_core_web_trf
+import ja_core_news_trf
 
-nlpEN = en_core_web_sm.load()
-nlpZH = zh_core_web_sm.load()
-nlpJA = ja_core_news_sm.load()
+nlpENTRF = en_core_web_trf.load()
+nlpZHTRF = zh_core_web_trf.load()
+nlpJATRF = ja_core_news_trf.load()
 
 
-def nlp(txt):
-    if txt:
-        if txt[0] <= '\u9fff':
-            return nlpZH(txt)
-        elif txt[0] <= '\u0fff':
-            return nlpJA(txt)
-        else:
-            return nlpEN(txt)
+def is_contain_chinese(string):
+    """判断字符串是否包含中文字符集"""
+    pattern = re.compile(r'[\u4e00-\u9fa5]')
+    return pattern.search(string) is not None
+
+
+def is_contain_japanese(string):
+    """判断字符串是否包含日文字符集"""
+    pattern = re.compile(r'[\u3040-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF]')
+    return pattern.search(string) is not None
+
+
+def nlp(txt: str):
+    if is_contain_chinese(txt) is True:
+        return nlpZHTRF(txt)
+    elif is_contain_japanese(txt) is True:
+        return nlpJATRF(txt)
     else:
-        return nlpEN(txt)
+        return nlpENTRF(txt)
 
 
 class EntityDetector:
@@ -34,6 +44,8 @@ class EntityDetector:
         doc = nlp(txt)
         # Iterate over the entities in the document
         for ent in doc.ents:
+            if (ent.text in self.entity_registry_names):
+                continue
             # Add the entity to the registry
             self.entity_registry_names.append(ent.text)
             # Access the label of the entity to extract its type
@@ -50,7 +62,7 @@ class EntityDetector:
         # Iterate over the items in the entity registry
         for item_name, item_type in zip(self.entity_registry_names, self.entity_registry_types):
             # Map the item to a uuid
-            item_uuid = str(uuid.uuid4())
+            item_uuid = '☀' + str(uuid.uuid4()) + '☀'
             # Add the mapped item to the dictionary
             self.entity_name_map[item_uuid] = item_name
             self.entity_type_map[item_uuid] = item_type
@@ -60,7 +72,13 @@ class EntityDetector:
     def redact(self, content: str):
 
         for entity, uuidstr in self.full_uuid_map.items():
-            content = content.replace(entity, uuidstr)
+            pattern = re.compile(
+                r'(?<!☀)[^☀\n]*(?:\n[^☀\n]*)*(?![^☀\n]*☀)')
+            # 定义替换函数
+
+            def replace(match):
+                return match.group().replace(entity, uuidstr)
+            content = re.sub(pattern, replace, content)
         txtprocess = content
         self.txtprocess = txtprocess
         return txtprocess

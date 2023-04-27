@@ -199,6 +199,8 @@ async def create_conversations_message(
             detector.detect_entities(con.message)
             detector.map_items()
             content = detector.redact(con.message)
+
+            print(content, detector.entity_registry_names)
         else:
             content = con.message
         message_log.append({'role': con.author_user, 'content': content})
