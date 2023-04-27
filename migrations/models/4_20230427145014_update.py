@@ -3,9 +3,9 @@ from tortoise import BaseDBAsyncClient
 
 async def upgrade(db: BaseDBAsyncClient) -> str:
     return """
-        ALTER TABLE "stripeproducts" DROP COLUMN "set_month";"""
+        ALTER TABLE "stripepayments" ADD "mode" VARCHAR(12)   DEFAULT 'subscription';"""
 
 
 async def downgrade(db: BaseDBAsyncClient) -> str:
     return """
-        ALTER TABLE "stripeproducts" ADD "set_month" INT   DEFAULT 0;"""
+        ALTER TABLE "stripepayments" DROP COLUMN "mode";"""

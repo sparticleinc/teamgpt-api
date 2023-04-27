@@ -71,8 +71,10 @@ CREATE TABLE IF NOT EXISTS "stripeproducts" (
     "sys_token" BOOL   DEFAULT False,
     "api_id" VARCHAR(255),
     "order" INT   DEFAULT 0,
-    "month" INT   DEFAULT 0
+    "month" INT   DEFAULT 0,
+    "mode" VARCHAR(12)   DEFAULT 'subscription'
 );
+COMMENT ON COLUMN "stripeproducts"."mode" IS 'PAYMENT: payment\nSUBSCRIPTION: subscription';
 CREATE TABLE IF NOT EXISTS "stripewebhooklog" (
     "id" UUID NOT NULL  PRIMARY KEY,
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from tortoise import fields, models
 
-from teamgpt.enums import Role, ContentType, AutherUser, GptModel
+from teamgpt.enums import Role, ContentType, AutherUser, GptModel, StripeModel
 
 
 class AbstractBaseModel(models.Model):
@@ -322,11 +322,14 @@ class StripeProducts(AbstractBaseModelWithDeletedAt):
     api_id = fields.CharField(max_length=255, null=True)
     order = fields.IntField(null=True, default=0)
     month = fields.IntField(null=True, default=0)
+    mode = fields.CharEnumField(StripeModel, null=True, default=StripeModel.SUBSCRIPTION)
 
 
 class StripePayments(AbstractBaseModelWithDeletedAt):
     api_id = fields.CharField(max_length=255, null=True)
     sub_id = fields.CharField(max_length=255, null=True)
+    payment_id = fields.CharField(max_length=255, null=True)
+    mode = fields.CharEnumField(StripeModel, null=True, default=StripeModel.SUBSCRIPTION)
     type = fields.CharField(max_length=255, null=True)
     invoice = fields.CharField(max_length=255, null=True)
     customer_details = fields.JSONField(null=True)
