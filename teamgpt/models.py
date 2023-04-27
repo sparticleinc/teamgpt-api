@@ -328,6 +328,7 @@ class StripeProducts(AbstractBaseModelWithDeletedAt):
 class StripePayments(AbstractBaseModelWithDeletedAt):
     api_id = fields.CharField(max_length=255, null=True)
     sub_id = fields.CharField(max_length=255, null=True)
+    payment_id = fields.CharField(max_length=255, null=True)
     type = fields.CharField(max_length=255, null=True)
     invoice = fields.CharField(max_length=255, null=True)
     customer_details = fields.JSONField(null=True)

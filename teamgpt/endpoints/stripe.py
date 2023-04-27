@@ -199,9 +199,11 @@ async def webhook(request: Request):
             checkout_id = event.data.object.id
             organization_id = metadata.get("organization_id")
             invoice = event.data.object.get("invoice")
+            payment_id = event.data.object.get("payment_intent")
             await StripePayments.create(
                 type='checkout.session.completed',
                 invoice=invoice,
+                payment_id=payment_id,
                 organization_id=organization_id,
                 customer_details=json.dumps(event.data.object.get("customer_details")),
             )
