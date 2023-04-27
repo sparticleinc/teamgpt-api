@@ -111,6 +111,7 @@ async def create_conversations_message(
         title: Union[str, None] = None,
         model: Union[GptModel, None] = Query(default=GptModel.GPT3TURBO),
         context_number: Union[int, None] = Query(default=5),
+        encrypt_sensitive_data: Union[bool, None] = Query(default=False),
         user: Auth0User = Security(auth.get_user)
 ):
     # 查询gpt-key配置信息,判断是否是系统用户
@@ -194,9 +195,12 @@ async def create_conversations_message(
     detector = EntityDetector()
 
     for con in con_org:
-        detector.detect_entities(con.message)
-        detector.map_items()
-        content = detector.redact(con.message)
+        if encrypt_sensitive_data is True:
+            detector.detect_entities(con.message)
+            detector.map_items()
+            content = detector.redact(con.message)
+        else:
+            content = con.message
         message_log.append({'role': con.author_user, 'content': content})
     # 发送sse请求数据
     start_time = int(time.time())
@@ -211,7 +215,8 @@ async def create_conversations_message(
             event_data = json.loads(event['data'])
             if event_data['sta'] == 'run':
                 message = message + event_data['message']
-                message = detector.unredact(message)
+                if encrypt_sensitive_data is True:
+                    message = detector.unredact(message)
 
                 if new_msg_obj_id == '':
                     new_msg_obj = await ConversationsMessage.create(user=user_info, conversation_id=conversation_id,
