@@ -1,12 +1,14 @@
 import uuid
 import re
-import en_core_web_trf
-import zh_core_web_trf
-import ja_core_news_trf
 
-nlpENTRF = en_core_web_trf.load()
-nlpZHTRF = zh_core_web_trf.load()
-nlpJATRF = ja_core_news_trf.load()
+
+# import en_core_web_trf
+# import zh_core_web_trf
+# import ja_core_news_trf
+#
+# nlpENTRF = en_core_web_trf.load()
+# nlpZHTRF = zh_core_web_trf.load()
+# nlpJATRF = ja_core_news_trf.load()
 
 
 def is_contain_chinese(string):
@@ -74,10 +76,12 @@ class EntityDetector:
         for entity, uuidstr in self.full_uuid_map.items():
             pattern = re.compile(
                 r'(?<!☀)[^☀\n]*(?:\n[^☀\n]*)*(?![^☀\n]*☀)')
+
             # 定义替换函数
 
             def replace(match):
                 return match.group().replace(entity, uuidstr)
+
             content = re.sub(pattern, replace, content)
         txtprocess = content
         self.txtprocess = txtprocess
