@@ -325,3 +325,14 @@ class OrgPaymentPlanOut(BaseModel):
 
 class PaymentPlanInt(BaseModel):
     organization_id: Optional[str] = None
+
+
+MidjourneyProxyHookIn = pydantic_model_creator(
+    models.MidjourneyProxyHook,
+    name='MidjourneyProxyHook',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)

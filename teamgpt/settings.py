@@ -94,6 +94,10 @@ STRIPE_API_KEY = os.getenv(
 DOMAIN = os.getenv(
     'DOMAIN', '')
 
+# midjourney-proxy
+MIDJOURNEY_PROXY_URL = os.getenv(
+    'MIDJOURNEY_PROXY_URL', '')
+
 # TortoiseORM settings
 TORTOISE_ORM = {
     'connections': {
