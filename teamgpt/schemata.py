@@ -334,7 +334,11 @@ MidjourneyProxySubmitIn = pydantic_model_creator(
         'id',
         'created_at',
         'updated_at',
-        'deleted_at'
+        'deleted_at',
+        'req_code',
+        'req_description',
+        'req_result',
+        'status'
     ),
 )
 

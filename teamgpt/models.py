@@ -347,6 +347,14 @@ class MidjourneyProxySubmit(AbstractBaseModelWithDeletedAt):
     index = fields.IntField(max_length=50, null=True)
     state = fields.CharField(max_length=50, null=True)
     notifyHook = fields.CharField(max_length=255, null=True)
+    req_code = fields.IntField(max_length=50, null=True)
+    req_description = fields.CharField(max_length=255, null=True)
+    req_result = fields.CharField(null=True, max_length=255)
+    status = fields.CharField(null=True, max_length=255, default='IN_PROGRESS')
+    image_url = fields.CharField(null=True, max_length=255)
+    finish_time = fields.CharField(null=True, max_length=255)
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_submit', null=True)
 
 
 class MidjourneyProxySubmitUv(AbstractBaseModelWithDeletedAt):
@@ -366,3 +374,6 @@ class MidjourneyProxyHook(AbstractBaseModelWithDeletedAt):
     finishTime = fields.CharField(max_length=255, null=True)
     imageUrl = fields.CharField(max_length=255, null=True)
     status = fields.CharField(max_length=255, null=True)
+
+    midjourney_proxy_submit = fields.ForeignKeyField(
+        'models.MidjourneyProxySubmit', related_name='midjourney_proxy_submit_hook', null=True)

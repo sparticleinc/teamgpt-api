@@ -13,7 +13,7 @@ async def url_submit(payload: MidjourneyProxySubmitIn):
         "taskId": payload.taskId,
         "index": payload.index,
         "state": payload.state,
-        "notifyHook": settings.MIDJOURNEY_HOOK
+        "notifyHook": payload.notifyHook
     }, headers=headers)
     return {"status_code": response.status_code, "response_body": response.json()}
 
