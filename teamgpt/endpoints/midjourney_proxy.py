@@ -1,8 +1,9 @@
+import uuid
+
 from fastapi import APIRouter
 
-from teamgpt import settings
 from teamgpt.models import MidjourneyProxyHook
-from teamgpt.schemata import MidjourneyProxyHookIn, MidjourneyProxySubmitIn, MidjourneyProxyHookToIn
+from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn
 from teamgpt.util.midjourney_proxy import url_submit
 
 router = APIRouter(prefix='/api/v1/midjourney_proxy', tags=['MidjourneyProxy'])
@@ -18,14 +19,7 @@ async def submit(mid_input: MidjourneyProxySubmitIn):
 # hook回调
 @router.post('/hook')
 async def hook(mid_input: MidjourneyProxyHookToIn):
-    new_obj = await MidjourneyProxyHook.create(run_id=mid_input.id,
-                                               action=mid_input.action,
-                                               prompt=mid_input.prompt,
-                                               promptEn=mid_input.promptEn,
-                                               description=mid_input.description,
-                                               state=mid_input.state,
-                                               submitTime=mid_input.submitTime,
-                                               finishTime=mid_input.finishTime,
-                                               imageUrl=mid_input.imageUrl,
-                                               status=mid_input.status)
+    run_id = mid_input.id
+    mid_input.id = uuid.uuid4()
+    new_obj = await MidjourneyProxyHook.create(**mid_input.dict(), run_id=run_id)
     return new_obj
