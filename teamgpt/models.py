@@ -340,6 +340,15 @@ class StripePayments(AbstractBaseModelWithDeletedAt):
     user = fields.ForeignKeyField('models.User', related_name='user_stripe_payments', null=True)
 
 
+class MidjourneyProxySubmit(AbstractBaseModelWithDeletedAt):
+    action = fields.CharField(max_length=50, null=True)
+    prompt = fields.CharField(max_length=50, null=True)
+    taskId = fields.CharField(max_length=255, null=True)
+    index = fields.IntField(max_length=50, null=True)
+    state = fields.CharField(max_length=50, null=True)
+    notifyHook = fields.CharField(max_length=255, null=True)
+
+
 class MidjourneyProxyHook(AbstractBaseModelWithDeletedAt):
     run_id = fields.CharField(max_length=255, null=True)
     action = fields.CharField(max_length=255, null=True)

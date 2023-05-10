@@ -97,6 +97,9 @@ DOMAIN = os.getenv(
 # midjourney-proxy
 MIDJOURNEY_PROXY_URL = os.getenv(
     'MIDJOURNEY_PROXY_URL', '')
+MIDJOURNEY_HOOK = os.getenv(
+    'MIDJOURNEY_HOOK', ''
+)
 
 # TortoiseORM settings
 TORTOISE_ORM = {

@@ -327,6 +327,24 @@ class PaymentPlanInt(BaseModel):
     organization_id: Optional[str] = None
 
 
+MidjourneyProxySubmitIn = pydantic_model_creator(
+    models.MidjourneyProxySubmit,
+    name='MidjourneyProxySubmit',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ),
+)
+
+
+class MidjourneyProxySubmitResponse(BaseModel):
+    code: Optional[int] = 0
+    description: Optional[str] = None
+    result: Optional[str] = None
+
+
 MidjourneyProxyHookIn = pydantic_model_creator(
     models.MidjourneyProxyHook,
     name='MidjourneyProxyHook',
@@ -336,3 +354,16 @@ MidjourneyProxyHookIn = pydantic_model_creator(
         'updated_at',
     ),
 )
+
+
+class MidjourneyProxyHookToIn(BaseModel):
+    id: Optional[str] = None
+    action: Optional[str] = None
+    prompt: Optional[str] = None
+    promptEn: Optional[str] = None
+    description: Optional[str] = None
+    state: Optional[str] = None
+    submitTime: Optional[int] = None
+    finishTime: Optional[int] = None
+    imageUrl: Optional[str] = None
+    status: Optional[str] = None
