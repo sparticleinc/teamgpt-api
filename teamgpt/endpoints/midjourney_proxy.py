@@ -30,7 +30,7 @@ async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(
             )
         return req_info
     else:
-        raise HTTPException(status_code=400, detail="submit failed")
+        raise HTTPException(status_code=400, detail="submit_obj is None")
 
 
 # 提交选中放大或变换任务
