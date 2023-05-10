@@ -338,6 +338,17 @@ MidjourneyProxySubmitIn = pydantic_model_creator(
     ),
 )
 
+MidjourneyProxySubmitUvIn = pydantic_model_creator(
+    models.MidjourneyProxySubmitUv,
+    name='MidjourneyProxySubmitUv',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ),
+)
+
 
 class MidjourneyProxySubmitResponse(BaseModel):
     code: Optional[int] = 0

@@ -349,6 +349,12 @@ class MidjourneyProxySubmit(AbstractBaseModelWithDeletedAt):
     notifyHook = fields.CharField(max_length=255, null=True)
 
 
+class MidjourneyProxySubmitUv(AbstractBaseModelWithDeletedAt):
+    state = fields.CharField(max_length=50, null=True)
+    content = fields.CharField(max_length=50, null=True)
+    notifyHook = fields.CharField(max_length=255, null=True)
+
+
 class MidjourneyProxyHook(AbstractBaseModelWithDeletedAt):
     run_id = fields.CharField(max_length=255, null=True)
     action = fields.CharField(max_length=255, null=True)
