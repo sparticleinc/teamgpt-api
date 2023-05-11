@@ -7,13 +7,12 @@ jobs:
   install:
     docker:
       - image: cimg/python:3.11.3
-        docker_layer_caching: false
     resource_class: medium
     steps:
       - checkout # checkout source code
       - run: python --version
       - run:
-          pip install -r requirements.txt
+          pip install -r requirements.txt  --no-cache
       # - run:
       #     name: Run tests
       #     command: python -m pytest
@@ -24,7 +23,6 @@ jobs:
   build-and-push:
     machine:
       image: ubuntu-2004:current
-      docker_layer_caching: false
     resource_class: medium
     parameters:
       docker-tag:
