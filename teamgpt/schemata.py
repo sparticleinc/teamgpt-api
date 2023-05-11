@@ -327,6 +327,11 @@ class PaymentPlanInt(BaseModel):
     organization_id: Optional[str] = None
 
 
+MidjourneyProxySubmitOut = pydantic_model_creator(
+    models.MidjourneyProxySubmit,
+    name='MidjourneyProxySubmitOut',
+)
+
 MidjourneyProxySubmitIn = pydantic_model_creator(
     models.MidjourneyProxySubmit,
     name='MidjourneyProxySubmit',

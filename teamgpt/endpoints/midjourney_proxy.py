@@ -5,11 +5,21 @@ from fastapi_auth0 import Auth0User
 
 from teamgpt import settings
 from teamgpt.models import MidjourneyProxyHook, MidjourneyProxySubmit, User
-from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn, MidjourneyProxySubmitUvIn
+from teamgpt.parameters import Page, ListAPIParams, tortoise_paginate
+from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn, MidjourneyProxySubmitUvIn, \
+    MidjourneyProxySubmitOut
 from teamgpt.settings import auth
 from teamgpt.util.midjourney_proxy import url_submit, url_submit_uv
 
 router = APIRouter(prefix='/api/v1/midjourney_proxy', tags=['MidjourneyProxy'])
+
+
+# 查询个人的提交记录列表
+@router.get('/submit_list')
+async def get_submit_list(user: Auth0User = Security(auth.get_user), params: ListAPIParams = Depends()):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    submit_obj = MidjourneyProxySubmit.filter(user=user_info, deleted_at__isnull=True)
+    return await tortoise_paginate(submit_obj, params, ['user'])
 
 
 # 提交任务
