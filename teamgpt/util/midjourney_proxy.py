@@ -27,3 +27,10 @@ async def url_submit_uv(payload: MidjourneyProxySubmitUvIn):
         "notifyHook": settings.MIDJOURNEY_HOOK
     }, headers=headers)
     return {"status_code": response.status_code, "response_body": response.json()}
+
+
+async def url_task_fetch(task_id: str):
+    url = settings.MIDJOURNEY_PROXY_URL + '/mj/task/' + task_id + '/fetch'
+    headers = {"Content-Type": "application/json"}
+    response = requests.get(url, headers=headers)
+    return {"status_code": response.status_code, "response_body": response.json()}

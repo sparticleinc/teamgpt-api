@@ -40,6 +40,12 @@ async def submit_uv(mid_input: MidjourneyProxySubmitUvIn):
     return req_info
 
 
+# 查询单个任务
+@router.get('/submit/{id}', response_model=MidjourneyProxySubmit)
+async def get_submit(id: int):
+    return await MidjourneyProxySubmit.get_or_none(id=id)
+
+
 # hook回调
 @router.post('/hook')
 async def hook(mid_input: MidjourneyProxyHookToIn):
