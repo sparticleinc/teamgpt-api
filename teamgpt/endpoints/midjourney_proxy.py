@@ -5,17 +5,16 @@ from fastapi_auth0 import Auth0User
 
 from teamgpt import settings
 from teamgpt.models import MidjourneyProxyHook, MidjourneyProxySubmit, User
-from teamgpt.parameters import Page, ListAPIParams, tortoise_paginate
-from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn, MidjourneyProxySubmitUvIn, \
-    MidjourneyProxySubmitOut
+from teamgpt.parameters import ListAPIParams, tortoise_paginate
+from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn
 from teamgpt.settings import auth
-from teamgpt.util.midjourney_proxy import url_submit, url_submit_uv
+from teamgpt.util.midjourney_proxy import url_submit, url_task_fetch
 
 router = APIRouter(prefix='/api/v1/midjourney_proxy', tags=['MidjourneyProxy'])
 
 
 # 查询个人的提交记录列表
-@router.get('/submit_list')
+@router.get('/submit_list', dependencies=[Depends(auth.implicit_scheme)])
 async def get_submit_list(user: Auth0User = Security(auth.get_user), params: ListAPIParams = Depends()):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     submit_obj = MidjourneyProxySubmit.filter(user=user_info, deleted_at__isnull=True)
@@ -23,7 +22,7 @@ async def get_submit_list(user: Auth0User = Security(auth.get_user), params: Lis
 
 
 # 提交任务
-@router.post('/submit', response_model=None, dependencies=[Depends(auth.implicit_scheme)])
+@router.post('/submit', dependencies=[Depends(auth.implicit_scheme)])
 async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(auth.get_user)):
     mid_input.notifyHook = settings.MIDJOURNEY_HOOK
     mid_input.state = str(uuid.uuid4())
@@ -43,17 +42,11 @@ async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(
         raise HTTPException(status_code=400, detail="submit_obj is None")
 
 
-# 提交选中放大或变换任务
-@router.post("submit_uv", response_model=None)
-async def submit_uv(mid_input: MidjourneyProxySubmitUvIn):
-    req_info = await url_submit_uv(mid_input)
-    return req_info
-
-
 # 查询单个任务
-@router.get('/submit/{id}', response_model=MidjourneyProxySubmit)
-async def get_submit(id: int):
-    return await MidjourneyProxySubmit.get_or_none(id=id)
+@router.get('/submit/{id}')
+async def get_submit(task_id: str):
+    req_info = await url_task_fetch(task_id)
+    return req_info
 
 
 # hook回调
