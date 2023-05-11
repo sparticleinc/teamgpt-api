@@ -7,6 +7,7 @@ jobs:
   install:
     docker:
       - image: cimg/python:3.11.3
+        docker_layer_caching: false
     resource_class: medium
     steps:
       - checkout # checkout source code
@@ -23,6 +24,7 @@ jobs:
   build-and-push:
     machine:
       image: ubuntu-2004:current
+      docker_layer_caching: false
     resource_class: medium
     parameters:
       docker-tag:
