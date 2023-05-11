@@ -12,7 +12,7 @@ COPY . /backend
 WORKDIR /backend
 
 # Use system pip
-RUN pip install  --isolated  -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8000
 
