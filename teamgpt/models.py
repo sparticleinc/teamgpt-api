@@ -221,7 +221,10 @@ class GptPrompt(AbstractBaseModelWithDeletedAt):
     prompt_hint = fields.TextField(null=True)
     teaser = fields.TextField(null=True)
     title = fields.CharField(max_length=255, null=True)
-
+    zh_CN_prompt_template = fields.TextField(null=True)
+    zh_CN_prompt_hint = fields.TextField(null=True)
+    zh_CN_teaser = fields.TextField(null=True)
+    zh_CN_title = fields.CharField(max_length=255, null=True)
     gpt_topic = fields.ForeignKeyField(
         'models.GptTopic', related_name='gpt_topic_gpt_prompt', null=True)
     organization = fields.ForeignKeyField(
@@ -282,7 +285,8 @@ class OpenGptConversationsMessage(AbstractBaseModelWithDeletedAt):
 
 
 class OpenGptChatMessage(AbstractBaseModelWithDeletedAt):
-    open_gpt_key = fields.ForeignKeyField('models.OpenGptKey', related_name='open_gpt_key_chat_messages')
+    open_gpt_key = fields.ForeignKeyField(
+        'models.OpenGptKey', related_name='open_gpt_key_chat_messages')
     model = fields.CharEnumField(GptModel, max_length=100, null=True)
     temperature = fields.IntField(null=True)
     top_p = fields.IntField(null=True)
@@ -322,7 +326,8 @@ class StripeProducts(AbstractBaseModelWithDeletedAt):
     api_id = fields.CharField(max_length=255, null=True)
     order = fields.IntField(null=True, default=0)
     month = fields.IntField(null=True, default=0)
-    mode = fields.CharEnumField(StripeModel, null=True, default=StripeModel.SUBSCRIPTION)
+    mode = fields.CharEnumField(
+        StripeModel, null=True, default=StripeModel.SUBSCRIPTION)
     product = fields.CharField(max_length=255, null=True)
 
 
@@ -330,14 +335,17 @@ class StripePayments(AbstractBaseModelWithDeletedAt):
     api_id = fields.CharField(max_length=255, null=True)
     sub_id = fields.CharField(max_length=255, null=True)
     payment_id = fields.CharField(max_length=255, null=True)
-    mode = fields.CharEnumField(StripeModel, null=True, default=StripeModel.SUBSCRIPTION)
+    mode = fields.CharEnumField(
+        StripeModel, null=True, default=StripeModel.SUBSCRIPTION)
     type = fields.CharField(max_length=255, null=True)
     invoice = fields.CharField(max_length=255, null=True)
     customer_details = fields.JSONField(null=True)
     stripe_products = fields.ForeignKeyField('models.StripeProducts', related_name='stripe_products_stripe_payments',
                                              null=True)
-    organization = fields.ForeignKeyField('models.Organization', related_name='organization_stripe_payments', null=True)
-    user = fields.ForeignKeyField('models.User', related_name='user_stripe_payments', null=True)
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_stripe_payments', null=True)
+    user = fields.ForeignKeyField(
+        'models.User', related_name='user_stripe_payments', null=True)
 
 
 class MidjourneyProxySubmit(AbstractBaseModelWithDeletedAt):

@@ -297,6 +297,10 @@ class GptPromptToOut(BaseModel):
     prompt_hint: Optional[str] = None
     teaser: str
     title: str
+    zh_CN_prompt_template: Optional[str] = None
+    zh_CN_prompt_hint: Optional[str] = None
+    zh_CN_teaser: Optional[str] = None
+    zh_CN_title: Optional[str] = None
     id: uuid.UUID
     gpt_topic_id: uuid.UUID
     user: Optional[UserOut] = None
