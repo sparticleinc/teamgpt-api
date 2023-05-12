@@ -1,3 +1,5 @@
+import json
+import time
 import uuid
 
 from fastapi import APIRouter, HTTPException, Depends, Security
@@ -6,9 +8,10 @@ from fastapi_auth0 import Auth0User
 from teamgpt import settings
 from teamgpt.models import MidjourneyProxyHook, MidjourneyProxySubmit, User
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
-from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn
+from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn, SendWsData
 from teamgpt.settings import auth
 from teamgpt.util.midjourney_proxy import url_submit, url_task_fetch
+from teamgpt.util.ws import manager
 
 router = APIRouter(prefix='/api/v1/midjourney_proxy', tags=['MidjourneyProxy'])
 
@@ -55,7 +58,19 @@ async def hook(mid_input: MidjourneyProxyHookToIn):
     run_id = mid_input.id
     mid_input.id = uuid.uuid4()
     new_obj = await MidjourneyProxyHook.create(**mid_input.dict(), run_id=run_id)
-    submit_info = await MidjourneyProxySubmit.filter(state=mid_input.state).first()
+    submit_info = await MidjourneyProxySubmit.filter(state=mid_input.state).prefetch_related('user').first()
+    await manager.broadcast(json.dumps(SendWsData(
+        type='midjourney_hook',
+        client_id=submit_info.user.user_id,
+        timestamp=int(time.time()),
+        data={
+            'finish_time': mid_input.finishTime,
+            'image_url': mid_input.imageUrl,
+            'status': mid_input.status,
+            'taskId': submit_info.taskId,
+            'id': str(submit_info.id)
+        }
+    ).dict()), 'midjourney')
     if submit_info is not None:
         await MidjourneyProxySubmit.filter(id=submit_info.id).update(
             finish_time=mid_input.finishTime,

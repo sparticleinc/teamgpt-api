@@ -387,3 +387,10 @@ class MidjourneyProxyHookToIn(BaseModel):
     finishTime: Optional[int] = None
     imageUrl: Optional[str] = None
     status: Optional[str] = None
+
+
+class SendWsData(BaseModel):
+    type: Optional[str] = None
+    client_id: Optional[str] = None
+    timestamp: Optional[int] = None
+    data: Optional[dict] = None
