@@ -377,3 +377,8 @@ class MidjourneyProxyHook(AbstractBaseModelWithDeletedAt):
 
     midjourney_proxy_submit = fields.ForeignKeyField(
         'models.MidjourneyProxySubmit', related_name='midjourney_proxy_submit_hook', null=True)
+
+
+class SystemConfig(AbstractBaseModelWithDeletedAt):
+    name = fields.CharField(max_length=255, null=True)
+    value = fields.JSONField(max_length=255, null=True)

@@ -9,7 +9,8 @@ from fastapi_auth0 import Auth0User
 from starlette.responses import RedirectResponse
 
 from teamgpt.enums import StripeModel
-from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User, UserOrganization
+from teamgpt.models import StripeWebhookLog, StripePayments, StripeProducts, Organization, User, UserOrganization, \
+    SystemConfig
 from teamgpt.schemata import StripeProductsOut, OrgPaymentPlanOut, PaymentPlanInt
 from teamgpt.settings import (STRIPE_API_KEY, DOMAIN, auth)
 
@@ -327,4 +328,9 @@ async def payment_plan(org_input: Union[PaymentPlanInt] = None, user: Auth0User 
         org_obj = await Organization.get_or_none(id=user_info.current_organization, deleted_at__isnull=True)
     else:
         org_obj = await Organization.get_or_none(id=org_input.organization_id, deleted_at__isnull=True)
-    return await org_payment_plan(org_obj)
+    info = await org_payment_plan(org_obj)
+    # 定义一个dict接收info的值
+    info_dict = info.dict()
+    # 增加一个变量
+    info_dict['pricing_map'] = await SystemConfig.filter(name='products').values()
+    return info_dict
