@@ -332,5 +332,7 @@ async def payment_plan(org_input: Union[PaymentPlanInt] = None, user: Auth0User 
     # 定义一个dict接收info的值
     info_dict = info.dict()
     # 增加一个变量
-    info_dict['pricing_map'] = await SystemConfig.filter(name='products').values()
+    system_info = await SystemConfig.filter(name='products').values()
+    if system_info is not None:
+        info_dict['pricing_map'] = system_info[0]['value']
     return info_dict
