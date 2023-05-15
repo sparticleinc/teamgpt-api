@@ -336,3 +336,9 @@ async def payment_plan(org_input: Union[PaymentPlanInt] = None, user: Auth0User 
     if system_info is not None:
         info_dict['pricing_map'] = system_info[0]['value']
     return info_dict
+
+
+@router.get("/pricing_map")
+async def pricing_map():
+    system_info = await SystemConfig.filter(name='products').values()
+    return system_info[0]['value']
