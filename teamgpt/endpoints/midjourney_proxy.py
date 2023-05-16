@@ -71,7 +71,7 @@ async def hook(mid_input: MidjourneyProxyHookToIn):
             'taskId': submit_info.taskId,
             'id': str(submit_info.id)
         }
-    ).dict()), 'midjourney')
+    ).dict()), 'midjourney:' + str(submit_info.user.user_id))
     if submit_info is not None:
         await MidjourneyProxySubmit.filter(id=submit_info.id).update(
             finish_time=mid_input.finishTime,
