@@ -390,3 +390,4 @@ class MidjourneyProxyHook(AbstractBaseModelWithDeletedAt):
 class SystemConfig(AbstractBaseModelWithDeletedAt):
     name = fields.CharField(max_length=255, null=True)
     value = fields.JSONField(max_length=255, null=True)
+    description = fields.CharField(max_length=255, null=True)
