@@ -29,7 +29,12 @@ async def get_submit_list(user: Auth0User = Security(auth.get_user), params: Lis
 async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(auth.get_user)):
     mid_input.notifyHook = settings.MIDJOURNEY_HOOK
     mid_input.state = str(uuid.uuid4())
-    mid_input.taskId = mid_input.state
+    if mid_input.action != 'IMAGINE':
+        mid_info = await MidjourneyProxySubmit.filter(taskId=mid_input.taskId).first()
+        if mid_info is not None:
+            mid_input.taskId = mid_info.req_result
+    else:
+        mid_input.taskId = mid_input.state
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     submit_obj = await MidjourneyProxySubmit.create(**mid_input.dict(exclude_unset=True), user=user_info)
     if submit_obj is not None:
