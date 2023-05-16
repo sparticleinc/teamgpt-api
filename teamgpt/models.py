@@ -393,3 +393,4 @@ class SystemConfig(AbstractBaseModelWithDeletedAt):
     description = fields.CharField(max_length=255, null=True)
     type = fields.CharField(max_length=255, null=True)
     order = fields.IntField(null=True)
+    info = fields.JSONField(null=True)
