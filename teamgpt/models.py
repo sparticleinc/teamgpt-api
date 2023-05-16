@@ -369,6 +369,7 @@ class MidjourneyProxySubmitUv(AbstractBaseModelWithDeletedAt):
     state = fields.CharField(max_length=50, null=True)
     content = fields.CharField(max_length=50, null=True)
     notifyHook = fields.CharField(max_length=255, null=True)
+    req_code = fields.IntField(max_length=50, null=True)
 
 
 class MidjourneyProxyHook(AbstractBaseModelWithDeletedAt):
