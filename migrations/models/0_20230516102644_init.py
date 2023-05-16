@@ -3,7 +3,16 @@ from tortoise import BaseDBAsyncClient
 
 async def upgrade(db: BaseDBAsyncClient) -> str:
     return """
-        CREATE TABLE IF NOT EXISTS "opengptkey" (
+        CREATE TABLE IF NOT EXISTS "midjourneyproxysubmituv" (
+    "id" UUID NOT NULL  PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ,
+    "state" VARCHAR(50),
+    "content" VARCHAR(50),
+    "notifyHook" VARCHAR(255)
+);
+CREATE TABLE IF NOT EXISTS "opengptkey" (
     "id" UUID NOT NULL  PRIMARY KEY,
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
@@ -72,7 +81,8 @@ CREATE TABLE IF NOT EXISTS "stripeproducts" (
     "api_id" VARCHAR(255),
     "order" INT   DEFAULT 0,
     "month" INT   DEFAULT 0,
-    "mode" VARCHAR(12)   DEFAULT 'subscription'
+    "mode" VARCHAR(12)   DEFAULT 'subscription',
+    "product" VARCHAR(255)
 );
 COMMENT ON COLUMN "stripeproducts"."mode" IS 'PAYMENT: payment\nSUBSCRIPTION: subscription';
 CREATE TABLE IF NOT EXISTS "stripewebhooklog" (
@@ -92,6 +102,16 @@ CREATE TABLE IF NOT EXISTS "sysgptkey" (
     "key" VARCHAR(255) NOT NULL,
     "remarks" VARCHAR(255)
 );
+CREATE TABLE IF NOT EXISTS "systemconfig" (
+    "id" UUID NOT NULL  PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ,
+    "name" VARCHAR(255),
+    "value" JSONB,
+    "description" VARCHAR(255),
+    "type" VARCHAR(255)
+);
 CREATE TABLE IF NOT EXISTS "user" (
     "id" UUID NOT NULL  PRIMARY KEY,
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
@@ -105,6 +125,42 @@ CREATE TABLE IF NOT EXISTS "user" (
     "nickname" VARCHAR(100),
     "current_organization" VARCHAR(100),
     "super" BOOL   DEFAULT False
+);
+CREATE TABLE IF NOT EXISTS "midjourneyproxysubmit" (
+    "id" UUID NOT NULL  PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ,
+    "action" VARCHAR(50),
+    "prompt" VARCHAR(50),
+    "taskId" VARCHAR(255),
+    "index" INT,
+    "state" VARCHAR(50),
+    "notifyHook" VARCHAR(255),
+    "req_code" INT,
+    "req_description" VARCHAR(255),
+    "req_result" VARCHAR(255),
+    "status" VARCHAR(255)   DEFAULT 'IN_PROGRESS',
+    "image_url" VARCHAR(255),
+    "finish_time" VARCHAR(255),
+    "user_id" UUID REFERENCES "user" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "midjourneyproxyhook" (
+    "id" UUID NOT NULL  PRIMARY KEY,
+    "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMPTZ,
+    "run_id" VARCHAR(255),
+    "action" VARCHAR(255),
+    "prompt" VARCHAR(255),
+    "promptEn" VARCHAR(255),
+    "description" VARCHAR(255),
+    "state" VARCHAR(255),
+    "submitTime" VARCHAR(255),
+    "finishTime" VARCHAR(255),
+    "imageUrl" VARCHAR(255),
+    "status" VARCHAR(255),
+    "midjourney_proxy_submit_id" UUID REFERENCES "midjourneyproxysubmit" ("id") ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS "organization" (
     "id" UUID NOT NULL  PRIMARY KEY,
@@ -205,6 +261,10 @@ CREATE TABLE IF NOT EXISTS "gptprompt" (
     "prompt_hint" TEXT,
     "teaser" TEXT,
     "title" VARCHAR(255),
+    "zh_CN_prompt_template" TEXT,
+    "zh_CN_prompt_hint" TEXT,
+    "zh_CN_teaser" TEXT,
+    "zh_CN_title" VARCHAR(255),
     "gpt_topic_id" UUID REFERENCES "gpttopic" ("id") ON DELETE CASCADE,
     "organization_id" UUID REFERENCES "organization" ("id") ON DELETE CASCADE,
     "user_id" UUID REFERENCES "user" ("id") ON DELETE CASCADE
@@ -216,6 +276,8 @@ CREATE TABLE IF NOT EXISTS "stripepayments" (
     "deleted_at" TIMESTAMPTZ,
     "api_id" VARCHAR(255),
     "sub_id" VARCHAR(255),
+    "payment_id" VARCHAR(255),
+    "mode" VARCHAR(12)   DEFAULT 'subscription',
     "type" VARCHAR(255),
     "invoice" VARCHAR(255),
     "customer_details" JSONB,
@@ -223,6 +285,7 @@ CREATE TABLE IF NOT EXISTS "stripepayments" (
     "stripe_products_id" UUID REFERENCES "stripeproducts" ("id") ON DELETE CASCADE,
     "user_id" UUID REFERENCES "user" ("id") ON DELETE CASCADE
 );
+COMMENT ON COLUMN "stripepayments"."mode" IS 'PAYMENT: payment\nSUBSCRIPTION: subscription';
 CREATE TABLE IF NOT EXISTS "userorganization" (
     "id" UUID NOT NULL  PRIMARY KEY,
     "created_at" TIMESTAMPTZ NOT NULL  DEFAULT CURRENT_TIMESTAMP,
