@@ -40,6 +40,7 @@ async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(
                 req_description=req_info['response_body']['description'],
                 req_result=req_info['response_body']['result'],
             )
+        req_info['info'] = submit_obj
         return req_info
     else:
         raise HTTPException(status_code=400, detail="submit_obj is None")
