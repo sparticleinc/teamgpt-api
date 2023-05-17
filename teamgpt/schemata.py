@@ -38,7 +38,7 @@ class UserToOut(BaseModel):
     current_organization: Optional[str] = None
     super: Optional[bool] = None
     join_sta: Optional[str] = None
-    attribute: Optional[UserAttributeOut] = None
+    attribute_list: Optional[list[UserAttributeOut]] = None
 
     class Config:
         orm_mode = True

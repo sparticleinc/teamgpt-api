@@ -76,7 +76,7 @@ async def get_current_user(user: Auth0User = Security(auth.get_user), code: Opti
         join_sta = 'no_code'
     user_out = UserToOut.from_orm(user_obj)
     user_out.join_sta = join_sta
-    user_out.attribute = await UserAttribute.get_or_none(user=user_obj)
+    user_out.attribute_list = await UserAttribute.filter(user=user_obj).all()
     return user_out
 
 
@@ -108,8 +108,4 @@ async def edit_user_attribute(attribute_input: UserAttributeIn, user: Auth0User 
     user_obj = await User.get_or_none(user_id=user.id)
     if user_obj is None:
         raise HTTPException(status_code=404, detail="User not found")
-    attribute_obj = await UserAttribute.get_or_none(user=user_obj)
-    if attribute_obj is None:
-        await UserAttribute.create(**attribute_input.dict(), user=user_obj)
-    else:
-        await UserAttribute.filter(user=user_obj).update(**attribute_input.dict())
+    await UserAttribute.create(**attribute_input.dict(), user=user_obj)
