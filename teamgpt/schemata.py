@@ -11,6 +11,21 @@ UserOut = pydantic_model_creator(
     name='UserOut',
 )
 
+UserAttributeIn = pydantic_model_creator(
+    models.UserAttribute,
+    name='UserAttributeIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+UserAttributeOut = pydantic_model_creator(
+    models.UserAttribute,
+    name='UserAttributeOut',
+)
+
 
 class UserToOut(BaseModel):
     id: uuid.UUID
@@ -23,6 +38,7 @@ class UserToOut(BaseModel):
     current_organization: Optional[str] = None
     super: Optional[bool] = None
     join_sta: Optional[str] = None
+    attribute: Optional[UserAttributeOut] = None
 
     class Config:
         orm_mode = True

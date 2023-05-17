@@ -395,3 +395,17 @@ class SystemConfig(AbstractBaseModelWithDeletedAt):
     type = fields.CharField(max_length=255, null=True)
     order = fields.IntField(null=True)
     info = fields.JSONField(null=True)
+
+
+class UserAttribute(AbstractBaseModelWithDeletedAt):
+    title = fields.CharField(max_length=255, null=True)
+    value = fields.CharField(max_length=255, null=True)
+    answer = fields.CharField(max_length=255, null=True)
+
+    user = fields.ForeignKeyField('models.User', related_name='user_user_attribute', null=True)
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
