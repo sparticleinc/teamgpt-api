@@ -2,6 +2,7 @@ import json
 
 import openai
 import tiktoken
+
 from teamgpt.models import OpenGptChatMessage
 
 
@@ -19,7 +20,8 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
             else:
                 message = ''
             sta = 'run'
-            if chunk_msg['choices'][0]['finish_reason'] == 'stop':
+            if chunk_msg['choices'][0]['finish_reason'] == 'stop' or chunk_msg['choices'][0][
+                'finish_reason'] == 'length':
                 sta = 'stop'
             yield {
                 "data": json.dumps(
