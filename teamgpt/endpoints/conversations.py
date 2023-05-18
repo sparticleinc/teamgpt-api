@@ -215,7 +215,7 @@ async def create_conversations_message(
         # 判断prompt_tokens如果超过4000,去除message_log最前面的数据,如果再超过4000则继续截取,直到小于4000,用一个新的message_log存储
         if prompt_tokens > 4000:
             while prompt_tokens > 4000:
-                message_log.pop(0)
+                message_log.pop(-1)
                 prompt_tokens = await num_tokens_from_messages(message_log[::-1], model=model)
         agen = ask(key, message_log[::-1], model, conversation_id)
         async for event in agen:
