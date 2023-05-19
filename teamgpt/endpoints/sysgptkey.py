@@ -5,15 +5,14 @@ from fastapi_auth0 import Auth0User
 from fastapi_pagination import Page
 from starlette.status import HTTP_204_NO_CONTENT
 
-from teamgpt.models import GPTKey, User, Organization, SysGPTKey
+from teamgpt.models import User, SysGPTKey
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
-from teamgpt.schemata import GPTKeyOut, GPTKeyIn, SysGPTKeyIn, SysGPTKeyOut
+from teamgpt.schemata import SysGPTKeyIn, SysGPTKeyOut
 from teamgpt.settings import (auth)
 
 router = APIRouter(prefix='/api/v1/sys_gpt_key', tags=['SysGptKey'])
 
 
-# create sys_gpt_key
 @router.post(
     '',
     response_model=SysGPTKeyOut,
