@@ -48,7 +48,6 @@ async def get_pay(organization_id: str, user: Auth0User = Security(auth.get_user
     stripe.api_key = STRIPE_API_KEY
     if obj is None:
         return None
-    # 取出obj到新的对象,并且增加sub_info
     req_obj = dict(obj)
     req_obj['product_info'] = {}
     product = await StripeProducts.filter(api_id=obj.api_id).first()
