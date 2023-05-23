@@ -350,7 +350,7 @@ class StripePayments(AbstractBaseModelWithDeletedAt):
 
 class MidjourneyProxySubmit(AbstractBaseModelWithDeletedAt):
     action = fields.CharField(max_length=50, null=True)
-    prompt = fields.CharField(max_length=50, null=True)
+    prompt = fields.TextField(null=True)
     taskId = fields.CharField(max_length=255, null=True)
     index = fields.IntField(max_length=50, null=True)
     state = fields.CharField(max_length=50, null=True)
