@@ -44,7 +44,7 @@ async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(
         plan_info = await org_payment_plan(org)
         if plan_info.is_super is False:
             if plan_info.is_plan is False:
-                raise HTTPException(status_code=420, detail="")
+                raise HTTPException(status_code=424, detail="")
     mid_input.notifyHook = settings.MIDJOURNEY_HOOK
     mid_input.state = str(uuid.uuid4())
     if mid_input.action != 'IMAGINE':
