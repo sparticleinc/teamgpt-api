@@ -1,3 +1,4 @@
+import datetime
 import json
 import time
 import uuid
@@ -6,7 +7,8 @@ from fastapi import APIRouter, HTTPException, Depends, Security
 from fastapi_auth0 import Auth0User
 
 from teamgpt import settings
-from teamgpt.models import MidjourneyProxyHook, MidjourneyProxySubmit, User
+from teamgpt.endpoints.stripe import org_payment_plan
+from teamgpt.models import MidjourneyProxyHook, MidjourneyProxySubmit, User, Organization
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
 from teamgpt.schemata import MidjourneyProxySubmitIn, MidjourneyProxyHookToIn, SendWsData
 from teamgpt.settings import auth
@@ -27,6 +29,22 @@ async def get_submit_list(user: Auth0User = Security(auth.get_user), params: Lis
 # 提交任务
 @router.post('/submit', dependencies=[Depends(auth.implicit_scheme)])
 async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(auth.get_user)):
+    # 查看当前组织是否在试用期,试用期只能生成一张图片
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
+    org = await Organization.get_or_none(id=user_info.current_organization, deleted_at__isnull=True)
+    if org is None:
+        raise HTTPException(status_code=400, detail="The current user has no organization.")
+    if user_info.current_organization is None or user_info.current_organization is '':
+        raise HTTPException(status_code=400, detail="The current user has no organization.")
+    count_day_submit = await MidjourneyProxySubmit.filter(user=user_info,
+                                                          organization=org,
+                                                          created_at__gte=datetime.datetime.now() - datetime.
+                                                          timedelta(days=1)).count()
+    if count_day_submit >= 1:
+        plan_info = await org_payment_plan(org)
+        if plan_info.is_super is False:
+            if plan_info.is_plan is False:
+                raise HTTPException(status_code=420, detail="")
     mid_input.notifyHook = settings.MIDJOURNEY_HOOK
     mid_input.state = str(uuid.uuid4())
     if mid_input.action != 'IMAGINE':
@@ -36,7 +54,8 @@ async def submit(mid_input: MidjourneyProxySubmitIn, user: Auth0User = Security(
     else:
         mid_input.taskId = mid_input.state
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
-    submit_obj = await MidjourneyProxySubmit.create(**mid_input.dict(exclude_unset=True), user=user_info)
+    submit_obj = await MidjourneyProxySubmit.create(**mid_input.dict(exclude_unset=True), user=user_info,
+                                                    organization=org)
     if submit_obj is not None:
         req_info = await url_submit(mid_input)
         if req_info['status_code'] == 200:

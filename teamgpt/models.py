@@ -363,6 +363,8 @@ class MidjourneyProxySubmit(AbstractBaseModelWithDeletedAt):
     finish_time = fields.CharField(null=True, max_length=255)
     user = fields.ForeignKeyField(
         'models.User', related_name='user_submit', null=True)
+    organization = fields.ForeignKeyField(
+        'models.Organization', related_name='organization_submit', null=True)
 
 
 class MidjourneyProxySubmitUv(AbstractBaseModelWithDeletedAt):
