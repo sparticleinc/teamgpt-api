@@ -59,6 +59,7 @@ class Organization(AbstractBaseModelWithDeletedAt):
     code_expiration_time = fields.DatetimeField(null=True)
     super = fields.BooleanField(default=False, null=True)
     users = fields.ManyToManyField('models.User', related_name='organizations')
+    gpt_models = fields.JSONField(null=True)
 
     gpt_keys: fields.ReverseRelation['GPTKey']
     user_user_organizations: fields.ReverseRelation['UserOrganization']
@@ -149,6 +150,7 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     prompt_tokens = fields.IntField(null=True)
     completion_tokens = fields.IntField(null=True)
     total_tokens = fields.IntField(null=True)
+    model = fields.CharEnumField(GptModel, max_length=100, null=True)
 
     class PydanticMeta:
         exclude = (
@@ -188,6 +190,7 @@ class GptChatMessage(AbstractBaseModelWithDeletedAt):
     prompt_tokens = fields.IntField(null=True)
     completion_tokens = fields.IntField(null=True)
     total_tokens = fields.IntField(null=True)
+    model = fields.CharEnumField(GptModel, max_length=100, null=True)
 
     class PydanticMeta:
         exclude = (

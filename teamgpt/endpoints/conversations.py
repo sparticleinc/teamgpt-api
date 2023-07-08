@@ -1,6 +1,7 @@
 import json
 import time
 import uuid
+from datetime import datetime, timedelta
 from typing import Union
 
 import openai
@@ -115,9 +116,30 @@ async def create_conversations_message(
         encrypt_sensitive_data: Union[bool, None] = Query(default=False),
         user: Auth0User = Security(auth.get_user)
 ):
+    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     # 查询gpt-key配置信息,判断是否是系统用户
     key = ''
     org_info = await Organization.get_or_none(id=organization_id, deleted_at__isnull=True)
+    # 判断组织支持的mode,限制gpt4小时发送条数
+    default_gpt_model = [GptModel.GPT3, GptModel.GPT3TURBO, GptModel.GPT3TURBO0613,
+                         GptModel.GPT3TURBO_16K_0613, GptModel.GPT3TURBO_16K]
+    time_limit = 60
+    count_limit = 10
+    gpt_model_limit_list = [GptModel.GPT4, GptModel.GPT4_32K, GptModel.GPT4_0613, GptModel.GPT4_32K_0613]
+    if model in gpt_model_limit_list:
+        # 查询用户一小时内发送的条数
+        count = await GptChatMessage.filter(
+            user=user_info, created_at__gte=datetime.now() - timedelta(minutes=time_limit),
+            model__in=gpt_model_limit_list,
+            deleted_at__isnull=True).count()
+        if count >= count_limit:
+            raise HTTPException(status_code=420, detail=f'You can only send 10 messages in {time_limit} minutes')
+
+    if org_info.gpt_models is not None:
+        default_gpt_model = list(set(default_gpt_model + org_info.gpt_models))
+    if model not in default_gpt_model:
+        raise HTTPException(status_code=422, detail='The GPT model is not supported')
+    # 判断是否有发送消息的权限
     plan_info = await org_payment_plan(org_info)
     if plan_info.is_send_msg is False:
         raise HTTPException(
@@ -151,7 +173,6 @@ async def create_conversations_message(
                         status_code=423, detail='GPT key not found')
         else:
             key = gpt_key.key
-    user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     message_log = []
     # 判断是否存在会话,没有先创建会话
     conversation_obj = await Conversations.get_or_none(id=conversation_id, deleted_at__isnull=True)
@@ -169,7 +190,6 @@ async def create_conversations_message(
         if con_obj is None:
             raise HTTPException(
                 status_code=404, detail='Conversation not found')
-        model = con_obj.model
 
     # 循环消息插入数据库
     for conversations_input in conversations_input_list:
@@ -179,7 +199,8 @@ async def create_conversations_message(
                                               author_user=conversations_input.author_user,
                                               content_type=conversations_input.content_type,
                                               key=key,
-                                              shown_message=conversations_input.shown_message
+                                              shown_message=conversations_input.shown_message,
+                                              model=model
                                               )
         else:
             await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
@@ -189,6 +210,7 @@ async def create_conversations_message(
                                               content_type=conversations_input.content_type,
                                               shown_message=conversations_input.shown_message,
                                               key=key,
+                                              model=model
                                               )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversation_id,
@@ -231,7 +253,8 @@ async def create_conversations_message(
                                                                     author_user=AutherUser.ASSISTANT,
                                                                     content_type=ContentType.TEXT,
                                                                     key=key,
-                                                                    prompt_tokens=prompt_tokens
+                                                                    prompt_tokens=prompt_tokens,
+                                                                    model=model
                                                                     )
                     new_msg_obj_id = str(new_msg_obj.id)
                 event_data['msg_id'] = new_msg_obj_id
@@ -251,7 +274,7 @@ async def create_conversations_message(
                 await GptChatMessage.create(in_message=json.dumps(message_log, ensure_ascii=False), out_message=message,
                                             key=key,
                                             user=user_info,
-                                            organization_id=org_info.id, conversation_id=conversation_id, )
+                                            organization_id=org_info.id, conversation_id=conversation_id, model=model)
                 yield event
                 await agen.aclose()
                 detector.clear_values()

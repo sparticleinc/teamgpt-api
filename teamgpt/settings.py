@@ -2,6 +2,7 @@ import os
 import secrets
 import string
 from urllib.parse import quote, urlencode
+
 from fastapi_auth0 import Auth0
 
 

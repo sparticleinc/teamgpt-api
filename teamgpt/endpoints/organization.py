@@ -83,7 +83,7 @@ async def create_organization(
     if org_input.gpt_key_source is None:
         org_input.gpt_key_source = GptKeySource.ORG
     # 不能创建超过5个组织
-    org_count = await Organization.filter(creator_id=user_info.id, deleted_at__isnull=True).count()
+    org_count = await Organization.filter(creator_id=user_info.id).count()
     if org_count >= 5:
         raise HTTPException(
             status_code=400, detail='You can only create 5 organizations')

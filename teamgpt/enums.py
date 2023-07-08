@@ -22,10 +22,14 @@ class AutherUser(str, Enum):
 class GptModel(str, Enum):
     GPT3 = 'gpt-3'
     GPT3TURBO = 'gpt-3.5-turbo'
-    GPT4 = 'gpt-4'
     GPT3TURBO0613 = 'gpt-3.5-turbo-0613'
     GPT3TURBO_16K_0613 = 'gpt-3.5-turbo-16k-0613'
     GPT3TURBO_16K = 'gpt-3.5-turbo-16k'
+    GPT4 = 'gpt-4'
+    GPT4_0613= 'gpt-4-0613'
+    GPT4_32K= 'gpt-4-32k'
+    GPT4_32K_0613= 'gpt-4-32k-0613'
+
 
 class GptKeySource(str, Enum):
     SYSTEM = 'system'

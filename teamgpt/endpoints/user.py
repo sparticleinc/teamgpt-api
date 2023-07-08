@@ -32,10 +32,7 @@ def do_login(state: Optional[str] = None, url: Optional[str] = None):
 
 @router.get('/logout')
 def do_logout(url: Optional[str] = None):
-    if url is None:
-        return RedirectResponse(url=LOGOUT_URL, status_code=302)
-    else:
-        return RedirectResponse(url=url, status_code=302)
+    return RedirectResponse(url=LOGOUT_URL, status_code=302)
 
 
 @router.get(
