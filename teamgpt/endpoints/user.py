@@ -11,7 +11,7 @@ from teamgpt.endpoints.stripe import org_payment_plan
 from teamgpt.models import User, UserOrganization, Organization, UserAttribute
 from teamgpt.schemata import UserToOut, UserAttributeIn
 from teamgpt.settings import (AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI,
-                              AUTHORIZATION_URL, LOGOUT_URL, auth)
+                              AUTHORIZATION_URL, LOGOUT_URL, auth, AUTH0_DOMAIN)
 from teamgpt.util.auth0 import get_user_info
 
 router = APIRouter(prefix='/api/v1', tags=['Users'])
@@ -32,7 +32,11 @@ def do_login(state: Optional[str] = None, url: Optional[str] = None):
 
 @router.get('/logout')
 def do_logout(url: Optional[str] = None):
-    return RedirectResponse(url=LOGOUT_URL, status_code=302)
+    if url is None:
+        return RedirectResponse(url=LOGOUT_URL, status_code=302)
+    else:
+        return RedirectResponse(url=f'https://{AUTH0_DOMAIN}/v2/logout?client_id={AUTH0_CLIENT_ID}&returnTo={url}',
+                                status_code=302)
 
 
 @router.get(
