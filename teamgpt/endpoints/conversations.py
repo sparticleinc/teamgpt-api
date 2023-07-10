@@ -133,7 +133,7 @@ async def create_conversations_message(
             model__in=gpt_model_limit_list,
             deleted_at__isnull=True).count()
         if count >= count_limit:
-            raise HTTPException(status_code=420, detail=f'You can only send 10 messages in {time_limit} minutes')
+            raise HTTPException(status_code=424, detail=f'You can only send 10 messages in {time_limit} minutes')
 
     if org_info.gpt_models is not None:
         default_gpt_model = list(set(default_gpt_model + org_info.gpt_models))
