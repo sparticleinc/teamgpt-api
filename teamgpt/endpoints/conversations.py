@@ -123,7 +123,7 @@ async def create_conversations_message(
     # 判断组织支持的mode,限制gpt4小时发送条数
     default_gpt_model = [GptModel.GPT3, GptModel.GPT3TURBO, GptModel.GPT3TURBO0613,
                          GptModel.GPT3TURBO_16K_0613, GptModel.GPT3TURBO_16K]
-    time_limit = 60
+    time_limit = 1
     count_limit = 10
     gpt_model_limit_list = [GptModel.GPT4, GptModel.GPT4_32K, GptModel.GPT4_0613, GptModel.GPT4_32K_0613]
     if model in gpt_model_limit_list:
