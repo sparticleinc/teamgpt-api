@@ -126,9 +126,7 @@ async def create_conversations_message(
     gpt_model_limit_list = [GptModel.GPT4, GptModel.GPT4_32K, GptModel.GPT4_0613, GptModel.GPT4_32K_0613]
     default_gpt_model = [GptModel.GPT3, GptModel.GPT3TURBO, GptModel.GPT3TURBO0613,
                          GptModel.GPT3TURBO_16K_0613, GptModel.GPT3TURBO_16K]
-    if org_info.gpt_models is not None:
-        default_gpt_model = list(set(default_gpt_model + org_info.gpt_models))
-    if model not in default_gpt_model:
+    if model not in default_gpt_model and model is None and model not in gpt_model_limit_list:
         raise HTTPException(status_code=422, detail='The GPT model is not supported')
     if org_info.gpt_models in gpt_model_limit_list:
         count_limit = 2
