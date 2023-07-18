@@ -128,7 +128,7 @@ async def create_conversations_message(
                          GptModel.GPT3TURBO_16K_0613, GptModel.GPT3TURBO_16K]
     if model not in default_gpt_model and model is None and model not in gpt_model_limit_list:
         raise HTTPException(status_code=422, detail='The GPT model is not supported')
-    if org_info.gpt_models in gpt_model_limit_list:
+    if model in gpt_model_limit_list:
         count_limit = 2
         if plan_info.is_super is True or plan_info.is_plan is True:
             count_limit = 10
