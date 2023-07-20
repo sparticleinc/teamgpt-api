@@ -150,7 +150,7 @@ async def create_conversations_message(
             status_code=420, detail='Not allowed to send messages')
     if org_info is None:
         raise HTTPException(status_code=404, detail='Organization not found')
-    if org_info.gpt_key_source is GptKeySource.SYSTEM:
+    if org_info.gpt_key_source == GptKeySource.SYSTEM.value:
         sys_gpt_key = await SysGPTKey.get_or_none(deleted_at__isnull=True)
         if sys_gpt_key is None:
             raise HTTPException(
