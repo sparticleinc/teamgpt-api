@@ -34,9 +34,13 @@ async def create_open_gpt_chat_message(
             status_code=401,
             detail="Unauthorized"
         )
-
-    new_obj = await OpenGptChatMessage.create(open_gpt_key_id=key_info.id, model=chat_message_input.model,
-                                              messages=chat_message_input.messages)
+    if chat_message_input.functions is not None:
+        new_obj = await OpenGptChatMessage.create(open_gpt_key_id=key_info.id, model=chat_message_input.model,
+                                                  messages=chat_message_input.messages,
+                                                  functools=chat_message_input.functions)
+    else:
+        new_obj = await OpenGptChatMessage.create(open_gpt_key_id=key_info.id, model=chat_message_input.model,
+                                                  messages=chat_message_input.messages)
     if chat_message_input.stream is None or chat_message_input.stream is False:
         message_log = []
         new_msg_obj_id = new_obj.id

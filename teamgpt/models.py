@@ -307,6 +307,7 @@ class OpenGptChatMessage(AbstractBaseModelWithDeletedAt):
     total_tokens = fields.IntField(null=True)
     logit_bias = fields.JSONField(null=True)
     user = fields.CharField(max_length=255, null=True)
+    functions = fields.JSONField(max_length=255, null=True)
 
     class PydanticMeta:
         exclude = (
