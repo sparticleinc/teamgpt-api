@@ -8,6 +8,7 @@ from teamgpt import settings
 from teamgpt.models import OpenGptChatMessage
 
 
+# 向 OpenAI 提问，但现在是直接调用过滤模型那边提供的Chat接口。先将用户信息经过过滤模型过滤，再将过滤后的信息传给OpenAI，然后再回答给用户。
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
     try:
