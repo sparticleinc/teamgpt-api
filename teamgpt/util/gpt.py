@@ -71,6 +71,67 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
         }
 
 
+async def privacy_ask(api_key: str, message_log: list, model: str, conversations_id: str):
+    try:
+        with requests.post(
+                settings.FILTER_MODEL_CHAT_URL + 'privacyChat/',
+                json.dumps({"model": model, "messages": message_log, "stream": True}),
+                stream=True,
+        ) as r:
+            if r.encoding is None:
+                r.encoding = "utf-8"
+            for line in r.iter_content(chunk_size=1024):
+                if line:
+                    data = json.loads(line.strip().decode("utf8"))
+                    print(data, 'data')
+                    if data["errCode"] == 0:
+                        message = data["result"]
+
+                    # 检查是否存在 entities 变量
+                    if "entities" in data:
+                        entities = data["entities"]
+                    else:
+                        entities = []
+
+                    if 'privacy_detected' in data:
+                        privacy_detected = data['privacy_detected']
+                    else:
+                        privacy_detected = False
+
+                    yield {
+                        "data": json.dumps(
+                            {
+                                "message": message,
+                                "sta": "run",
+                                "conversation_id": str(conversations_id),
+                                "msg_id": "",
+                                'privacy_detected': privacy_detected,
+                                "entities": entities
+                            }
+                        ),
+                    }
+                else:
+                    raise ValueError("Non-zero error code received")
+
+            yield {
+                "data": json.dumps(
+                    {
+                        "message": "",
+                        "sta": "stop",
+                        "conversation_id": str(conversations_id),
+                        "msg_id": "",
+                        "entities": [],
+                        'privacy_detected': False
+                    }
+                ),
+            }
+    except Exception as e:
+        print("ask gpt error", e)
+        yield {
+            "data": json.dumps({"error": str(e), "sta": "error"}),
+        }
+
+
 async def ask_open(api_key: str, message_log: list, model: str):
     openai.api_key = api_key
     try:
