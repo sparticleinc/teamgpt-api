@@ -415,3 +415,17 @@ class UserAttribute(AbstractBaseModelWithDeletedAt):
             'updated_at',
             'deleted_at',
         )
+
+
+class MaskContent(AbstractBaseModelWithDeletedAt):
+    content = fields.CharField(max_length=255, null=True)
+    entities = fields.JSONField(null=True)
+    mask_content = fields.CharField(max_length=255, null=True)
+    mask_result = fields.CharField(max_length=255, null=True)
+    result = fields.CharField(max_length=255, null=True)
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )

@@ -5,22 +5,43 @@ import uuid
 from typing import Union
 
 import openai
+import requests
 from fastapi import APIRouter, Depends, HTTPException, Security, Query
 from fastapi_auth0 import Auth0User
 from fastapi_pagination import Page
 from sse_starlette import EventSourceResponse
 from starlette.status import HTTP_204_NO_CONTENT
 
+from teamgpt import settings
 from teamgpt.endpoints.stripe import org_payment_plan
 from teamgpt.enums import GptModel, ContentType, AutherUser, GptKeySource
-from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey, GptChatMessage
+from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey, GptChatMessage, \
+    MaskContent
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
-from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut
+from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut, \
+    MaskContentInput
 from teamgpt.settings import (auth)
 from teamgpt.util.entity_detector import EntityDetector
 from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num
 
 router = APIRouter(prefix='/api/v1/conversations', tags=['Conversations'])
+
+
+@router.post('/message/mask_content')
+async def create_mask_content(mask_content_input: MaskContentInput,
+                              user: Auth0User = Security(auth.get_user)):
+    url = settings.FILTER_MODEL_CHAT_URL + 'maskContent/'
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(url, json={
+        "content": mask_content_input.content,
+    }, headers=headers)
+    req_data = response.json()
+    info = await MaskContent.create(id=uuid.UUID(mask_content_input.id), content=mask_content_input.content,
+                                    entities=req_data['entities'],
+                                    masked_content=req_data['masked_content'],
+                                    masked_result=req_data['masked_result'],
+                                    result=req_data['result'])
+    return info
 
 
 @router.get("/message/test/{key}")

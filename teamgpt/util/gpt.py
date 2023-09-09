@@ -13,7 +13,7 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
     openai.api_key = api_key
     try:
         with requests.post(
-                settings.FILTER_MODEL_CHAT_URL,
+                settings.FILTER_MODEL_CHAT_URL + 'privacyChat/',
                 json.dumps({"model": model, "messages": message_log, "stream": True}),
                 stream=True,
         ) as r:
