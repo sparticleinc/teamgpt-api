@@ -22,7 +22,7 @@ from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMes
     MaskContentInput
 from teamgpt.settings import (auth)
 from teamgpt.util.entity_detector import EntityDetector
-from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num
+from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num, privacy_ask
 
 router = APIRouter(prefix='/api/v1/conversations', tags=['Conversations'])
 
@@ -136,7 +136,7 @@ async def create_conversations_message(
         context_number: Union[int, None] = Query(default=5),
         encrypt_sensitive_data: Union[bool, None] = Query(default=False),
         user: Auth0User = Security(auth.get_user),
-        privacy_chat: Union[bool, None] = Query(default=False),
+        privacy_chat_sta: Union[bool, None] = Query(default=False),
 ):
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     # 查询gpt-key配置信息,判断是否是系统用户
@@ -265,8 +265,8 @@ async def create_conversations_message(
             while prompt_tokens > 4000:
                 message_log.pop(-1)
                 prompt_tokens = await num_tokens_from_messages(message_log[::-1], model=model)
-        if privacy_chat is True:
-            agen = privacy_ask(key, message_log[::-1], model, conversation_id)
+        if privacy_chat_sta is True:
+            agen = privacy_ask(message_log[::-1], model, conversation_id)
         else:
             agen = ask(key, message_log[::-1], model, conversation_id)
         async for event in agen:

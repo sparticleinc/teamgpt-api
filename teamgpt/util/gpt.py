@@ -8,70 +8,35 @@ from teamgpt import settings
 from teamgpt.models import OpenGptChatMessage
 
 
-# 向 OpenAI 提问，但现在是直接调用过滤模型那边提供的Chat接口。先将用户信息经过过滤模型过滤，再将过滤后的信息传给OpenAI，然后再回答给用户。
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
     try:
-        with requests.post(
-                settings.FILTER_MODEL_CHAT_URL + 'privacyChat/',
-                json.dumps({"model": model, "messages": message_log, "stream": True}),
-                stream=True,
-        ) as r:
-            if r.encoding is None:
-                r.encoding = "utf-8"
-            for line in r.iter_content(chunk_size=1024):
-                if line:
-                    data = json.loads(line.strip().decode("utf8"))
-                    print(data, 'data')
-                    if data["errCode"] == 0:
-                        message = data["result"]
-
-                    # 检查是否存在 entities 变量
-                    if "entities" in data:
-                        entities = data["entities"]
-                    else:
-                        entities = []
-
-                    if 'privacy_detected' in data:
-                        privacy_detected = data['privacy_detected']
-                    else:
-                        privacy_detected = False
-
-                    yield {
-                        "data": json.dumps(
-                            {
-                                "message": message,
-                                "sta": "run",
-                                "conversation_id": str(conversations_id),
-                                "msg_id": "",
-                                'privacy_detected': privacy_detected,
-                                "entities": entities
-                            }
-                        ),
-                    }
-                else:
-                    raise ValueError("Non-zero error code received")
-
+        async for chunk_msg in await openai.ChatCompletion.acreate(
+                model=model,
+                messages=message_log,
+                stream=True
+        ):
+            # completion_tokens = await num_tokens_from_messages(chunk_msg, model=model)
+            if 'content' in chunk_msg['choices'][0]['delta']:
+                message = chunk_msg['choices'][0]['delta']['content']
+            else:
+                message = ''
+            sta = 'run'
+            if chunk_msg['choices'][0]['finish_reason'] == 'stop' or chunk_msg['choices'][0][
+                'finish_reason'] == 'length':
+                sta = 'stop'
             yield {
                 "data": json.dumps(
-                    {
-                        "message": "",
-                        "sta": "stop",
-                        "conversation_id": str(conversations_id),
-                        "msg_id": "",
-                        "entities": [],
-                        'privacy_detected': False
-                    }
-                ),
+                    {'message': message, 'sta': sta, 'conversation_id': str(conversations_id), 'msg_id': ''}),
             }
     except Exception as e:
-        print("ask gpt error", e)
         yield {
-            "data": json.dumps({"error": str(e), "sta": "error"}),
+            "data": json.dumps({'error': str(e), 'sta': 'error'}),
         }
 
 
-async def privacy_ask(api_key: str, message_log: list, model: str, conversations_id: str):
+# 向 OpenAI 提问，但现在是直接调用过滤模型那边提供的Chat接口。先将用户信息经过过滤模型过滤，再将过滤后的信息传给OpenAI，然后再回答给用户。
+async def privacy_ask(message_log: list, model: str, conversations_id: str):
     try:
         with requests.post(
                 settings.FILTER_MODEL_CHAT_URL + 'privacyChat/',

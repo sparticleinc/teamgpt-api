@@ -151,6 +151,7 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     completion_tokens = fields.IntField(null=True)
     total_tokens = fields.IntField(null=True)
     model = fields.CharEnumField(GptModel, max_length=100, null=True)
+    privacy_chat_sta = fields.BooleanField(null=True, default=False)
 
     class PydanticMeta:
         exclude = (
