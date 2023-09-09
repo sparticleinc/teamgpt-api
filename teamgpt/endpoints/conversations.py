@@ -40,6 +40,7 @@ async def create_mask_content(mask_content_input: MaskContentInput,
                                     entities=req_data['entities'],
                                     masked_content=req_data['masked_content'],
                                     masked_result=req_data['masked_result'],
+                                    privacy_detected=req_data['privacy_detected'],
                                     result=req_data['result'])
     return info
 

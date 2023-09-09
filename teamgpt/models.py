@@ -421,8 +421,9 @@ class UserAttribute(AbstractBaseModelWithDeletedAt):
 class MaskContent(AbstractBaseModelWithDeletedAt):
     content = fields.CharField(max_length=255, null=True)
     entities = fields.JSONField(null=True)
-    mask_content = fields.CharField(max_length=255, null=True)
-    mask_result = fields.CharField(max_length=255, null=True)
+    masked_content = fields.CharField(max_length=255, null=True)
+    masked_result = fields.CharField(max_length=255, null=True)
+    privacy_detected = fields.BooleanField(null=True, default=False)
     result = fields.CharField(max_length=255, null=True)
 
     class PydanticMeta:
