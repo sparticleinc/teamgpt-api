@@ -18,8 +18,7 @@ from teamgpt.enums import GptModel, ContentType, AutherUser, GptKeySource
 from teamgpt.models import User, Conversations, ConversationsMessage, GPTKey, Organization, SysGPTKey, GptChatMessage, \
     MaskContent
 from teamgpt.parameters import ListAPIParams, tortoise_paginate
-from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, ConversationsMessageOut, \
-    MaskContentInput
+from teamgpt.schemata import ConversationsIn, ConversationsOut, ConversationsMessageIn, MaskContentInput
 from teamgpt.settings import (auth)
 from teamgpt.util.entity_detector import EntityDetector
 from teamgpt.util.gpt import ask, num_tokens_from_messages, msg_tiktoken_num, privacy_ask
@@ -227,7 +226,8 @@ async def create_conversations_message(
                                               content_type=conversations_input.content_type,
                                               key=key,
                                               shown_message=conversations_input.shown_message,
-                                              model=model
+                                              model=model,
+                                              privacy_chat_sta=privacy_chat_sta
                                               )
         else:
             await ConversationsMessage.create(id=uuid.UUID(str(conversations_input.id)), user=user_info,
@@ -237,7 +237,8 @@ async def create_conversations_message(
                                               content_type=conversations_input.content_type,
                                               shown_message=conversations_input.shown_message,
                                               key=key,
-                                              model=model
+                                              model=model,
+                                              privacy_chat_sta=privacy_chat_sta
                                               )
     # 查询前5条消息
     con_org = await ConversationsMessage.filter(user=user_info, conversation_id=conversation_id,
@@ -284,7 +285,7 @@ async def create_conversations_message(
                                                                     content_type=ContentType.TEXT,
                                                                     key=key,
                                                                     prompt_tokens=prompt_tokens,
-                                                                    model=model
+                                                                    model=model,
                                                                     )
                     new_msg_obj_id = str(new_msg_obj.id)
                 event_data['msg_id'] = new_msg_obj_id
@@ -314,7 +315,7 @@ async def create_conversations_message(
 
 # get conversations message
 @router.get('/message/{conversations_id}',
-            response_model=Page[ConversationsMessageOut], dependencies=[Depends(auth.implicit_scheme)])
+            dependencies=[Depends(auth.implicit_scheme)])
 async def get_conversations_message(
         conversations_id: str,
         user: Auth0User = Security(auth.get_user),
@@ -323,4 +324,13 @@ async def get_conversations_message(
     user_info = await User.get_or_none(user_id=user.id, deleted_at__isnull=True)
     con_org = ConversationsMessage.filter(user=user_info, conversation_id=conversations_id,
                                           deleted_at__isnull=True)
-    return await tortoise_paginate(con_org, params)
+    req_list = await tortoise_paginate(con_org, params)
+    for i in range(len(req_list.items)):
+        obj = req_list.items[i].__dict__
+        del obj['_partial']
+        del obj['_custom_generated_pk']
+        if req_list.items[i].privacy_chat_sta:
+            obj['mask_content'] = await MaskContent.get_or_none(id=req_list.items[i].id,
+                                                                deleted_at__isnull=True)
+        req_list.items[i] = obj
+    return req_list
