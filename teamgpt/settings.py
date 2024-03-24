@@ -119,6 +119,9 @@ TORTOISE_ORM = {
 FILTER_MODEL_CHAT_URL = os.getenv(
     'FILTER_MODEL_CHAT_URL', '')
 
+OPENAI_API_BASE = os.getenv(
+    'OPENAI_API_BASE', 'https://api.openai.com')
+
 
 def api_key() -> str:
     alphabet = string.ascii_letters + string.digits
