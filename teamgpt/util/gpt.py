@@ -12,6 +12,8 @@ from teamgpt.models import OpenGptChatMessage
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
     openai.api_base = settings.OPENAI_API_BASE
+    print('openai.api_key', openai.api_key, 'openai.api_base', openai.api_base)
+
     try:
         # gpt4转换成0125版本
         if model == GptModel.GPT4:
