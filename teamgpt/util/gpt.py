@@ -5,20 +5,23 @@ import requests
 import tiktoken
 
 from teamgpt import settings
+from teamgpt.enums import GptModel
 from teamgpt.models import OpenGptChatMessage
 
 
 async def ask(api_key: str, message_log: list, model: str, conversations_id: str):
     openai.api_key = api_key
     openai.api_base = settings.OPENAI_API_BASE
-    print('openai.api_base', openai.api_base,"21321312")
     try:
+        # gpt4转换成0125版本
+        if model == GptModel.GPT4:
+            model = GptModel.GPT4_0125
+
         async for chunk_msg in await openai.ChatCompletion.acreate(
                 model=model,
                 messages=message_log,
                 stream=True
         ):
-            print('chunk_msg', chunk_msg)
             # completion_tokens = await num_tokens_from_messages(chunk_msg, model=model)
             if 'content' in chunk_msg['choices'][0]['delta']:
                 message = chunk_msg['choices'][0]['delta']['content']
@@ -33,7 +36,6 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
                     {'message': message, 'sta': sta, 'conversation_id': str(conversations_id), 'msg_id': ''}),
             }
     except Exception as e:
-        print("chunk_msg ask gpt error", e)
         yield {
             "data": json.dumps({'error': str(e), 'sta': 'error'}),
         }
