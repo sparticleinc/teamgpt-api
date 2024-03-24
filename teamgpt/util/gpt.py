@@ -18,6 +18,8 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
         # gpt4转换成0125版本
         if model == GptModel.GPT4:
             model = GptModel.GPT4_0125
+        if model == GptModel.GPT3TURBO_16K:
+            model = GptModel.GPT3_0125
 
         async for chunk_msg in await openai.ChatCompletion.acreate(
                 model=model,
