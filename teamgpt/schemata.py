@@ -395,6 +395,27 @@ MidjourneyProxyHookIn = pydantic_model_creator(
     ),
 )
 
+MaskContentIn = pydantic_model_creator(
+    models.MaskContent,
+    name='MaskContentIn',
+    exclude=(
+        'id',
+        'created_at',
+        'updated_at',
+    ),
+)
+
+
+class MaskContentInput(BaseModel):
+    content: Optional[str] = None
+    id: Optional[str] = None
+
+
+MaskContentOut = pydantic_model_creator(
+    models.MaskContent,
+    name='MaskContentOut',
+)
+
 
 class MidjourneyProxyHookToIn(BaseModel):
     id: Optional[str] = None

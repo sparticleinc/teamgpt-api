@@ -1,15 +1,16 @@
 import nest_asyncio
 import openai
-from starlette import status
-from starlette.responses import JSONResponse
-from tortoise.contrib.fastapi import register_tortoise
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.errors import ServerErrorMiddleware
-from teamgpt.endpoints import router
-from teamgpt.settings import TORTOISE_ORM, GPT_PROXY_URL
 from fastapi.openapi.docs import (get_swagger_ui_html,
                                   get_swagger_ui_oauth2_redirect_html)
-from fastapi import FastAPI
+from starlette import status
+from starlette.middleware.errors import ServerErrorMiddleware
+from starlette.responses import JSONResponse
+from tortoise.contrib.fastapi import register_tortoise
+
+from teamgpt.endpoints import router
+from teamgpt.settings import TORTOISE_ORM, GPT_PROXY_URL
 
 nest_asyncio.apply()
 
@@ -65,6 +66,6 @@ async def oauth2_redirect():
     return get_swagger_ui_oauth2_redirect_html()
 
 
-@app.get('/')
+@app.get('/api/v1/test')
 def read_root():
     return 'hello'

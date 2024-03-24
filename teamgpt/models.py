@@ -151,6 +151,7 @@ class ConversationsMessage(AbstractBaseModelWithDeletedAt):
     completion_tokens = fields.IntField(null=True)
     total_tokens = fields.IntField(null=True)
     model = fields.CharEnumField(GptModel, max_length=100, null=True)
+    privacy_chat_sta = fields.BooleanField(null=True, default=False)
 
     class PydanticMeta:
         exclude = (
@@ -409,6 +410,21 @@ class UserAttribute(AbstractBaseModelWithDeletedAt):
     answer = fields.CharField(max_length=255, null=True)
 
     user = fields.ForeignKeyField('models.User', related_name='user_user_attribute', null=True)
+
+    class PydanticMeta:
+        exclude = (
+            'updated_at',
+            'deleted_at',
+        )
+
+
+class MaskContent(AbstractBaseModelWithDeletedAt):
+    content = fields.CharField(max_length=255, null=True)
+    entities = fields.JSONField(null=True)
+    masked_content = fields.CharField(max_length=255, null=True)
+    masked_result = fields.CharField(max_length=255, null=True)
+    privacy_detected = fields.BooleanField(null=True, default=False)
+    result = fields.CharField(max_length=255, null=True)
 
     class PydanticMeta:
         exclude = (
