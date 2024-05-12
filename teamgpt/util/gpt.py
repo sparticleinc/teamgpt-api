@@ -17,7 +17,7 @@ async def ask(api_key: str, message_log: list, model: str, conversations_id: str
     try:
         # gpt4转换成0125版本
         if model == GptModel.GPT4:
-            model = GptModel.GPT4_0125
+            model = GptModel.GPT4_TURBO
         if model == GptModel.GPT3TURBO_16K:
             model = GptModel.GPT3_0125
 

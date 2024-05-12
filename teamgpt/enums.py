@@ -31,6 +31,7 @@ class GptModel(str, Enum):
     GPT4_32K_0613= 'gpt-4-32k-0613'
     GPT4_0125= 'gpt-4-0125-preview'
     GPT3_0125= 'gpt-3.5-turbo-0125'
+    GPT4_TURBO = 'gpt-4-turbo'
 
 
 class GptKeySource(str, Enum):
